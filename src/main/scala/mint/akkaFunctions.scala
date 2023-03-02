@@ -232,12 +232,12 @@ class akkaFunctions {
       )
       .toErgoContract
 
-//    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-//      .constants(29)
-//      .value
-//      .asInstanceOf[Long]
+    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
+      .constants(29)
+      .value
+      .asInstanceOf[Long]
 
-    val priceOfNFTNanoErg: Long = 2000000
+//    val priceOfNFTNanoErg: Long = 2000000
 
     val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
 
