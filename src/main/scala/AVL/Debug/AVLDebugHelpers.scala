@@ -1,7 +1,6 @@
 package AVL.Debug
 
 import AVL.NFT.{IndexKey}
-import AVL.Debug.AVLDebug
 import com.google.common.primitives.Longs
 import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.{

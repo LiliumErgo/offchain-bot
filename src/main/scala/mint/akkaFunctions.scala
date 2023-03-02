@@ -34,10 +34,13 @@ import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.{PlasmaMap, Proof, ProvenResult}
 import sigmastate.AvlTreeFlags
 import utils.{
+  BoxAPI,
+  BoxJson,
   ContractCompile,
   DatabaseAPI,
   LiliumEntry,
   MetadataTranscoder,
+  NodeBoxJson,
   TransactionHelper,
   explorerApi,
   fileOperations
@@ -190,7 +193,7 @@ class akkaFunctions {
       )
 
       println("NFT Tx: " + txHelper.sendTx(nftTxn))
-      Thread.sleep(2000)
+      Thread.sleep(500)
 
       latestStateBoxInput.clear()
       latestStateBoxInput.add(issuerTxn.getOutputsToSpend.get(1).getId.toString)
@@ -198,111 +201,59 @@ class akkaFunctions {
 
   }
 
-  def mint(): Unit = { //mints tickets
-    val proxyAddress =
-      Address.create(contractsConf.Contracts.proxyContract.contract)
-//    println("proxy address: " + proxyAddress.toString)
-    val validProxyBoxes = new util.ArrayList[InputBox]()
+  def mint(singletonId: String, boxJson: Array[BoxJson]): Unit = { //mints tickets
+
     val latestStateBoxInput = new util.ArrayList[String]()
-    val boxes = client.getAllUnspentBox(proxyAddress)
-    var counter = 0
-//    println(boxes)
 
-    for (box <- boxes) {
-      counter += 1
-      val validBox = (box.getRegisters.size() == 2) && (box.getRegisters
-        .get(0)
-        .getType
-        .getRType
-        .name == "SigmaProp") && (box.getRegisters
-        .get(1)
-        .getType
-        .getRType
-        .name == "Coll[Byte]")
+    val singletonTokenId =
+      ErgoValue.of(new ErgoToken(singletonId, 1).getId.getBytes).toHex
 
-      if (validBox) {
-        val proxyBox = exp.getUnspentBoxFromMempool(box.getId.toString)
-        val tokenIDFromRegister = proxyBox.getRegisters
-          .get(1)
-          .getValue
-          .asInstanceOf[Coll[Byte]]
-          .toArray
-        val tokenID = new ErgoToken(tokenIDFromRegister, 1).getId.toString
-        val stateBox = {
-          try {
-            exp.getUnspentBoxFromTokenID(tokenID)
-          } catch {
-            case e: Exception => null
-          }
-        }
+    println("Searching for: " + singletonId)
 
-        if (stateBox != null) {
-          val lastStateBox: Boolean = {
-            stateBox.getAssets.size() == 1 && stateBox.getAdditionalRegisters
-              .size() == 3
-          }
-
-          val stateContract = Address
-            .fromPropositionBytes(
-              ctx.getNetworkType,
-              exp
-                .getUnspentBoxFromMempool(stateBox.getBoxId)
-                .toErgoValue
-                .getValue
-                .propositionBytes
-                .toArray
-            )
-            .toErgoContract
-
-          val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-            .constants(29)
-            .value
-            .asInstanceOf[Long]
-
-          val dataBaseResp = DatabaseAPI.getRow(
-            tokenID
-          )
-
-          if (
-            !lastStateBox &&
-            proxyBox.getValue >= priceOfNFTNanoErg
-            && dataBaseResp != null
-          ) {
-            validProxyBoxes.add(proxyBox)
-          }
-
-        }
-
+    val stateBox: OutputInfo = {
+      try {
+        val res = exp.getUnspentBoxFromTokenID(singletonId)
+        if (res == null) return
+        else res
+      } catch {
+        case e: Exception => return
       }
-
     }
 
-    if (validProxyBoxes.isEmpty) {
+    val stateContract = Address
+      .fromPropositionBytes(
+        ctx.getNetworkType,
+        exp
+          .getUnspentBoxFromMempool(stateBox.getBoxId)
+          .toErgoValue
+          .getValue
+          .propositionBytes
+          .toArray
+      )
+      .toErgoContract
+
+//    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
+//      .constants(29)
+//      .value
+//      .asInstanceOf[Long]
+
+    val priceOfNFTNanoErg: Long = 2000000
+
+    val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
+
+    val boxes: Array[InputBox] = boxJson
+      .filter(box => validateProxyBox(box, singletonTokenId, priceOfNFTNanoErg))
+      .map(boxAPIObj.convertJsonBoxToErgoBox)
+
+    if (boxes.length == 0) {
+      println("No Boxes Found")
       return
     }
-
-    val tokenIDFromRegister = validProxyBoxes
-      .get(0)
-      .getRegisters
-      .get(1)
-      .getValue
-      .asInstanceOf[Coll[Byte]]
-      .toArray
-    val tokenID = new ErgoToken(tokenIDFromRegister, 1).getId.toString
-    val stateBox = exp.getUnspentBoxFromTokenID(tokenID)
 
     latestStateBoxInput.add(stateBox.getBoxId)
 
     mintNFT(
-      validProxyBoxes.asScala
-        .filter(box =>
-          box.getRegisters
-            .get(1)
-            .getValue
-            .asInstanceOf[Coll[Byte]]
-            .toArray sameElements tokenIDFromRegister
-        )
-        .toArray,
+      boxes,
       latestStateBoxInput
     )
   }
@@ -310,8 +261,34 @@ class akkaFunctions {
   def main(): Unit = {
 
     println("proceeding with mint")
-    mint()
 
+    val compiler = new ContractCompile(ctx)
+
+    val proxyAddress = compiler
+      .compileProxyContract(
+        LiliumContracts.ProxyContract.contractScript,
+        serviceConf.minerFeeNanoErg
+      )
+      .toAddress
+    //    println("proxy address: " + proxyAddress.toString)
+
+    val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
+
+    val boxes =
+      boxAPIObj
+        .getUnspentBoxesFromApi(proxyAddress.toString, selectAll = true)
+        .items
+
+    DatabaseAPI.getAllSingletons.foreach(t => mint(t, boxes))
+
+  }
+
+  def validateProxyBox(
+      box: BoxJson,
+      singleton: String,
+      value: Long
+  ): Boolean = {
+    box.additionalRegisters.R4 != null && box.additionalRegisters.R5.serializedValue == singleton && box.value >= value
   }
 
 }

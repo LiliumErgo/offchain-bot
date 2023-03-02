@@ -2,6 +2,8 @@ package initilization
 
 import AVL.IssuerBox.IssuerValue
 import AVL.NFT.{IndexKey, IssuanceValueAVL}
+import AVL.utils.avlUtils
+import AVL.utils.avlUtils.exportAVL
 import configs.conf
 import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap}
 import mint.DefaultNodeInfo
@@ -23,6 +25,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import utils.{
   ContractCompile,
+  DatabaseAPI,
   MetadataTranscoder,
   OutBoxes,
   TransactionHelper,
@@ -43,6 +46,7 @@ class createCollection(
     singletonIssuerContractString: String,
     singletonIssuanceContractString: String,
     artistAddress: Address,
+    encodedRoyalty: String,
     royaltyBlakeHash: Array[Byte],
     collectionName: String,
     collectionDescription: String,
@@ -53,8 +57,8 @@ class createCollection(
     mintExpiryTimestamp: Long,
     returnCollectionTokensToArtist: Boolean,
     socialMediaMap: mutable.Map[String, String],
-    issuanceMetaDataMap: LocalPlasmaMap[IndexKey, IssuanceValueAVL],
-    issuerMetaDataMap: LocalPlasmaMap[IndexKey, IssuerValue],
+    issuanceMetaDataMap: PlasmaMap[IndexKey, IssuanceValueAVL],
+    issuerMetaDataMap: PlasmaMap[IndexKey, IssuerValue],
     priceOfNFTNanoErg: Long,
     liliumFeeAddress: Address,
     liliumFeeNanoErg: Long,
@@ -249,8 +253,8 @@ class createCollection(
 
   val stateBox: OutBox = outBoxObj.buildStateBox(
     stateContract,
-    issuanceMetaDataMap.asInstanceOf[PlasmaMap[IndexKey, IssuanceValueAVL]],
-    issuerMetaDataMap.asInstanceOf[PlasmaMap[IndexKey, IssuerValue]],
+    issuanceMetaDataMap,
+    issuerMetaDataMap,
     singletonTokenTx.getOutputsToSpend.get(0).getTokens.get(0),
     collectionTokenTx.getOutputsToSpend.get(0).getTokens.get(0),
     0,
@@ -300,6 +304,17 @@ class createCollection(
     proxyContract.toAddress.toString,
     initTransactionP1.getOutputsToSpend.get(1).getId.toString
   ).write("contracts.json")
+
+  DatabaseAPI.createArtistEntry(
+    singletonTokenTx.getOutputsToSpend.get(0).getTokens.get(0).getId.toString,
+    initTransactionP1.getOutputsToSpend.get(1).getId.toString,
+    startingTimestamp,
+    expiryTimestamp,
+    artistAddress.toString,
+    exportAVL(issuerMetaDataMap).getJsonString,
+    exportAVL(issuanceMetaDataMap).getJsonString,
+    encodedRoyalty
+  )
 
   def convertERGLongToDouble(num: Long): Double = {
     val value = num * math.pow(10, -9)

@@ -68,6 +68,11 @@ class explorerApi(
     api.getApiV1BoxesByaddressP1(address, 0, 100).execute().body().getItems
   }
 
+  def getUnspentBoxesByAddress(address: String): util.List[OutputInfo] = {
+    val api = this.getExplorerApi(this.apiUrl)
+    api.getApiV1BoxesByaddressP1(address, 0, 100).execute().body().getItems
+  }
+
   def getBoxesfromUnconfirmedTransaction(
       txId: String
   ): Either[ErgoTransaction, TransactionInfo] = {

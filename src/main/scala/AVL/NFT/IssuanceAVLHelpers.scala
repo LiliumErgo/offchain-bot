@@ -4,6 +4,7 @@ import com.google.common.primitives.Longs
 import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.{
   LocalPlasmaMap,
+  PlasmaMap,
   Proof,
   ProvenResult
 }
@@ -17,22 +18,14 @@ import special.sigma.AvlTree
 
 import java.io.File
 
-class IssuanceAVLHelpers(dbFilePath: String) {
+class IssuanceAVLHelpers {
 
-  val ldbStore = new LDBVersionedStore(new File(dbFilePath), 10)
-
-  val avlStorage = new VersionedLDBAVLStorage[Digest32](
-    ldbStore,
-    PlasmaParameters.default.toNodeParams
-  )(Blake2b256)
-
-  private val metaDataMap = new LocalPlasmaMap[IndexKey, IssuanceValueAVL](
-    avlStorage,
+  private val metaDataMap = new PlasmaMap[IndexKey, IssuanceValueAVL](
     AvlTreeFlags.AllOperationsAllowed,
     PlasmaParameters.default
   )
 
-  def getMap: LocalPlasmaMap[IndexKey, IssuanceValueAVL] = {
+  def getMap: PlasmaMap[IndexKey, IssuanceValueAVL] = {
     return metaDataMap
   }
 

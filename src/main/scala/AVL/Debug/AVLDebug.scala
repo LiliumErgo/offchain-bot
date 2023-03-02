@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs
 import io.getblok.getblok_plasma.ByteConversion
 import org.bouncycastle.util.Strings
 import org.bouncycastle.util.encoders.Hex
-import org.ergoplatform.appkit.Iso
+
 import scorex.crypto.hash
 
 import java.nio.charset.StandardCharsets

@@ -69,12 +69,14 @@ class OutBoxes(ctx: BlockchainContext) {
       tokenDecimals: Int
   ): Eip4Token = {
 
-    Eip4TokenBuilder.buildNftArtworkCollectionToken(
+    Eip4TokenBuilder.buildNftPictureToken(
       inputBox.getId.toString,
       tokenAmount,
       name,
       description,
-      tokenDecimals
+      tokenDecimals,
+      Array(0.toByte),
+      "link"
     )
   }
 
@@ -378,10 +380,60 @@ class OutBoxes(ctx: BlockchainContext) {
       .build()
   }
 
+  def buildStateBoxWithLocalPlasmaMap(
+      contract: ErgoContract,
+      issuanceMetaDataMap: LocalPlasmaMap[IndexKey, IssuanceValueAVL],
+      issuerMetaDataMap: LocalPlasmaMap[IndexKey, IssuerValue],
+      singletonToken: ErgoToken,
+      collectionToken: ErgoToken,
+      index: Long,
+      startingTime: Long,
+      expiryTime: Long,
+      returnCollectionTokensToArtist: Boolean,
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .registers(
+        issuanceMetaDataMap.ergoValue,
+        issuerMetaDataMap.ergoValue,
+        ErgoValue.of(index),
+        ErgoValueBuilder.buildFor(
+          (startingTime, expiryTime)
+        ),
+        ErgoValue.of(returnCollectionTokensToArtist)
+      )
+      .tokens(singletonToken, collectionToken)
+      .contract(contract)
+      .build()
+  }
+
   def lastStateBox(
       contract: ErgoContract,
       issuanceMetaDataMap: PlasmaMap[IndexKey, IssuanceValueAVL],
       issuerMetaDataMap: PlasmaMap[IndexKey, IssuerValue],
+      singletonToken: ErgoToken,
+      index: Long,
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .registers(
+        issuanceMetaDataMap.ergoValue,
+        issuerMetaDataMap.ergoValue,
+        ErgoValue.of(index)
+      )
+      .tokens(singletonToken)
+      .contract(contract)
+      .build()
+  }
+
+  def lastStateBoxWithLocalPlasmaMap(
+      contract: ErgoContract,
+      issuanceMetaDataMap: LocalPlasmaMap[IndexKey, IssuanceValueAVL],
+      issuerMetaDataMap: LocalPlasmaMap[IndexKey, IssuerValue],
       singletonToken: ErgoToken,
       index: Long,
       amount: Double = 0.001

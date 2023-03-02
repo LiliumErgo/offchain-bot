@@ -1,9 +1,11 @@
 package AVL.IssuerBox
+
 import AVL.NFT.IndexKey
 import com.google.common.primitives.Longs
 import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.{
   LocalPlasmaMap,
+  PlasmaMap,
   Proof,
   ProvenResult
 }
@@ -17,20 +19,14 @@ import special.sigma.AvlTree
 
 import java.io.File
 
-class IssuerHelpersAVL(dbFilePath: String) {
+class IssuerHelpersAVL {
 
-  val ldbStore = new LDBVersionedStore(new File(dbFilePath), 10)
-  val avlStorage = new VersionedLDBAVLStorage[Digest32](
-    ldbStore,
-    PlasmaParameters.default.toNodeParams
-  )(Blake2b256)
-  private val metaDataMap = new LocalPlasmaMap[IndexKey, IssuerValue](
-    avlStorage,
+  private val metaDataMap = new PlasmaMap[IndexKey, IssuerValue](
     AvlTreeFlags.AllOperationsAllowed,
     PlasmaParameters.default
   )
 
-  def getMap: LocalPlasmaMap[IndexKey, IssuerValue] = {
+  def getMap: PlasmaMap[IndexKey, IssuerValue] = {
     return metaDataMap
   }
 

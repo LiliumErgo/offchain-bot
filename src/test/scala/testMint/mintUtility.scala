@@ -1,17 +1,15 @@
-package mint
+package testMint
 
-import AVL.IssuerBox.{IssuerHelpersAVL, IssuerValue}
-import AVL.NFT.{IndexKey, IssuanceAVLHelpers, IssuanceValueAVL}
-import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap, Proof}
-import org.bouncycastle.util.encoders.Hex
+import AVL.IssuerBox.IssuerValue
+import AVL.NFT.{IndexKey, IssuanceValueAVL}
+import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap}
+import mint.DefaultNodeInfo
 import org.ergoplatform.ErgoBox.R9
-import org.ergoplatform.{ErgoBox, ErgoScriptPredef}
-import org.ergoplatform.appkit.{ErgoValue, _}
-import org.ergoplatform.appkit.impl.{Eip4TokenBuilder, ErgoTreeContract}
+import org.ergoplatform.ErgoScriptPredef
+import org.ergoplatform.appkit._
+import org.ergoplatform.appkit.impl.Eip4TokenBuilder
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import scalan.RType.LongType
 import scorex.crypto.encode.Base16
-import sigmastate.basics.DLogProtocol
 import sigmastate.eval.Colls
 import special.collection.Coll
 import utils.{MetadataTranscoder, OutBoxes, TransactionHelper, explorerApi}
@@ -61,7 +59,11 @@ class mintUtility(
       encodedRoyalty: ErgoValue[ // create from db
         Coll[(Coll[Byte], Integer)]
       ],
-      issuanceTree: PlasmaMap[IndexKey, IssuanceValueAVL], // create from db
+      collectionTokenId: String,
+      issuanceTree: PlasmaMap[
+        IndexKey,
+        IssuanceValueAVL
+      ], // create from db
       issuerTree: PlasmaMap[IndexKey, IssuerValue] // create from db
   ): SignedTransaction = {
     val inputs: ListBuffer[InputBox] = new ListBuffer[InputBox]()
@@ -106,28 +108,28 @@ class mintUtility(
       }
     }
 
-    val minerFee = stateContract.getErgoTree
-      .constants(38)
-      .value
-      .asInstanceOf[Long]
+//    val minerFee = stateContract.getErgoTree
+//      .constants(38)
+//      .value
+//      .asInstanceOf[Long]
 
-//    val minerFee = 1600000
-
-    val mockCollectionToken: ErgoToken =
-      new ErgoToken( // called mock since value is not accurate, we just want the token methods
-        stateContract.getErgoTree
-          .constants(1)
-          .value
-          .asInstanceOf[Coll[Byte]]
-          .toArray,
-        1
-      )
+    val minerFee = 1700000
 
 //    val mockCollectionToken: ErgoToken =
 //      new ErgoToken( // called mock since value is not accurate, we just want the token methods
-//        "525d68eec660a0484f13c66f2141b9bc71886b6b902448c6f3ae0f4737f0fefe",
+//        stateContract.getErgoTree
+//          .constants(1)
+//          .value
+//          .asInstanceOf[Coll[Byte]]
+//          .toArray,
 //        1
 //      )
+
+    val mockCollectionToken: ErgoToken =
+      new ErgoToken( // called mock since value is not accurate, we just want the token methods
+        collectionTokenId,
+        1
+      )
 
     val collectionIssuerBox =
       api.getErgoBoxfromID(mockCollectionToken.getId.toString)
@@ -203,15 +205,15 @@ class mintUtility(
         0.001 + convertERGLongToDouble(minerFee)
       )
 
-    val artistAddress: Address = new org.ergoplatform.appkit.SigmaProp(
-      stateContract.getErgoTree
-        .constants(5)
-        .value
-        .asInstanceOf[special.sigma.SigmaProp]
-    ).toAddress(ctx.getNetworkType)
+//    val artistAddress: Address = new org.ergoplatform.appkit.SigmaProp(
+//      stateContract.getErgoTree
+//        .constants(5)
+//        .value
+//        .asInstanceOf[special.sigma.SigmaProp]
+//    ).toAddress(ctx.getNetworkType)
 
-//    val artistAddress =
-//      Address.create("3WwHSFPhz6867vwYmuGQ4m634DQvT5u2Hpp2jit94EVLkacLEn44")
+    val artistAddress =
+      Address.create("3WwnvL9PBXHyR72UyUJqbqAxH1gFT7kbWmivgVXfhUV362i76qRY")
 
     val newStateBox: OutBox = {
       if (r6 + 1L == collectionMaxSize) { //last sale outbox
@@ -265,35 +267,35 @@ class mintUtility(
       }
     }
 
-    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-      .constants(29)
-      .value
-      .asInstanceOf[Long]
+//    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
+//      .constants(29)
+//      .value
+//      .asInstanceOf[Long]
 
-//    val priceOfNFTNanoErg: Long = 2000000
+    val priceOfNFTNanoErg: Long = 2000000
 
     val paymentBox: OutBox = outBoxObj.artistPayoutBox(
       artistAddress,
       convertERGLongToDouble(priceOfNFTNanoErg)
     )
 
-    val liliumFee = stateContract.getErgoTree
-      .constants(30)
-      .value
-      .asInstanceOf[Long]
+//    val liliumFee = stateContract.getErgoTree
+//      .constants(30)
+//      .value
+//      .asInstanceOf[Long]
 
-//    val liliumFee = 5000000
+    val liliumFee = 5000000
 
-    val liliumFeeAddress = new org.ergoplatform.appkit.SigmaProp(
-      stateContract.getErgoTree
-        .constants(31)
-        .value
-        .asInstanceOf[special.sigma.SigmaProp]
-    )
-      .toAddress(this.ctx.getNetworkType)
+//    val liliumFeeAddress = new org.ergoplatform.appkit.SigmaProp(
+//      stateContract.getErgoTree
+//        .constants(31)
+//        .value
+//        .asInstanceOf[special.sigma.SigmaProp]
+//    )
+//      .toAddress(this.ctx.getNetworkType)
 
-//    val liliumFeeAddress =
-//      Address.create("3WxR2UxZihv7NTYkUj5U6Pzg1K3UTAip6oDCwDcn1AjDws49WDYg")
+    val liliumFeeAddress =
+      Address.create("3WxR2UxZihv7NTYkUj5U6Pzg1K3UTAip6oDCwDcn1AjDws49WDYg")
 
     val liliumBox: OutBox = outBoxObj.artistPayoutBox(
       liliumFeeAddress,
@@ -398,12 +400,12 @@ class mintUtility(
       )
       .toErgoContract
 
-    val minerFee = stateContract.getErgoTree
-      .constants(38)
-      .value
-      .asInstanceOf[Long]
+//    val minerFee = stateContract.getErgoTree
+//      .constants(38)
+//      .value
+//      .asInstanceOf[Long]
 
-//    val minerFee = 1600000
+    val minerFee = 1700000
 
     val outputs = List(outBoxObj.nftOutBox(buyerAddress, nft))
 
@@ -420,4 +422,3 @@ class mintUtility(
   }
 
 }
-//hello

@@ -79,3 +79,4 @@ assemblyOutputPath in assembly := file(
   s"./lilium-offchain-${version.value}.jar/"
 )
 mainClass in assembly := Some("app.Main")
+mainClass := Some("app.Main")
