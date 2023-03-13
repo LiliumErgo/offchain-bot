@@ -103,12 +103,13 @@ object IssuerValue {
       override def convertToBytes(t: IssuerValue): Array[Byte] = t.toBytes
       override def convertFromBytes(bytes: Array[Byte]): IssuerValue = {
 
-        val textualTraitsMap: mutable.Map[String, String] =
+        val textualTraitsMap: mutable.LinkedHashMap[String, String] =
           mutable.LinkedHashMap()
 
-        val levelsMap: mutable.Map[String, (Int, Int)] =
+        val levelsMap: mutable.LinkedHashMap[String, (Int, Int)] =
           mutable.LinkedHashMap()
-        val statsMap: mutable.Map[String, (Int, Int)] = mutable.LinkedHashMap()
+        val statsMap: mutable.LinkedHashMap[String, (Int, Int)] =
+          mutable.LinkedHashMap()
 
         val delimiter: Array[Byte] =
           Array[Byte](

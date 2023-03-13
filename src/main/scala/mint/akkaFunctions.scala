@@ -139,10 +139,6 @@ class akkaFunctions {
         return
       }
 
-      println(
-        "Processing Collection " + stateBoxInput.getTokens.get(0).getId.toString
-      )
-
       val dataBaseResponse: LiliumEntry =
         DatabaseAPI.getRow(stateBoxInput.getTokens.get(0).getId.toString)
 

@@ -69,7 +69,7 @@ class mintUtility(
     val outValue: ListBuffer[Long] = new ListBuffer[Long]()
     val inputValueIdeal: ListBuffer[Long] = new ListBuffer[Long]()
     val input0: InputBox = boxWithCollectionTokens
-    println("proxyInput: " + proxyInput.getId.toString)
+//    println("proxyInput: " + proxyInput.getId.toString)
 
     val r4 = proxyInput.getRegisters.get(0).toHex
     val prop =
@@ -135,9 +135,9 @@ class mintUtility(
     val collectionMaxSize =
       collectionIssuerBox.additionalRegisters(R9).value.asInstanceOf[Long]
 
-    println("Collection Max Size: " + collectionMaxSize)
-
-    println("State Box Contract: " + stateContract.toAddress.toString)
+//    println("Collection Max Size: " + collectionMaxSize)
+//
+//    println("State Box Contract: " + stateContract.toAddress.toString)
 
     inputs.append(
       input0.withContextVars(
@@ -165,20 +165,34 @@ class mintUtility(
 //    val buyerAmountPaid = 0.003
 //    inputValueIdeal.append((buyerAmountPaid * math.pow(10, 9).toLong).toLong)
 
-    println("r6: " + r6)
+    println(
+      "Processing Collection: " + boxWithCollectionTokens.getTokens
+        .get(0)
+        .getId
+        .toString + " " + (r6 + 1) + "/" + collectionMaxSize
+    )
+
+//    println("r6: " + r6)
 
     val decodedMetadata = decoder.decodeMetadata(
       issuerTree.lookUp(IndexKey(r6)).response.head.get.metaData
     )
     val encodedMetadata = encoder.encodeMetaData(
-      decodedMetadata(0).asInstanceOf[mutable.Map[String, String]],
-      decodedMetadata(1).asInstanceOf[mutable.Map[String, (Int, Int)]],
-      decodedMetadata(2).asInstanceOf[mutable.Map[String, (Int, Int)]]
+      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]],
+      decodedMetadata(1)
+        .asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]],
+      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
     )
 
-    println(decodedMetadata(0).asInstanceOf[mutable.Map[String, String]])
-    println(decodedMetadata(1).asInstanceOf[mutable.Map[String, (Int, Int)]])
-    println(decodedMetadata(2).asInstanceOf[mutable.Map[String, (Int, Int)]])
+//    println(
+//      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]]
+//    )
+//    println(
+//      decodedMetadata(1).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+//    )
+//    println(
+//      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+//    )
 
     val emptyArray = new util.ArrayList[Coll[Byte]]()
 

@@ -71,7 +71,7 @@ class mintUtility(
     val outValue: ListBuffer[Long] = new ListBuffer[Long]()
     val inputValueIdeal: ListBuffer[Long] = new ListBuffer[Long]()
     val input0: InputBox = boxWithCollectionTokens
-    println("proxyInput: " + proxyInput.getId.toString)
+//    println("proxyInput: " + proxyInput.getId.toString)
 
     val r4 = proxyInput.getRegisters.get(0).toHex
     val prop =
@@ -173,14 +173,21 @@ class mintUtility(
       issuerTree.lookUp(IndexKey(r6)).response.head.get.metaData
     )
     val encodedMetadata = encoder.encodeMetaData(
-      decodedMetadata(0).asInstanceOf[mutable.Map[String, String]],
-      decodedMetadata(1).asInstanceOf[mutable.Map[String, (Int, Int)]],
-      decodedMetadata(2).asInstanceOf[mutable.Map[String, (Int, Int)]]
+      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]],
+      decodedMetadata(1)
+        .asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]],
+      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
     )
 
-    println(decodedMetadata(0).asInstanceOf[mutable.Map[String, String]])
-    println(decodedMetadata(1).asInstanceOf[mutable.Map[String, (Int, Int)]])
-    println(decodedMetadata(2).asInstanceOf[mutable.Map[String, (Int, Int)]])
+    println(
+      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]]
+    )
+    println(
+      decodedMetadata(1).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+    )
+    println(
+      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+    )
 
     val emptyArray = new util.ArrayList[Coll[Byte]]()
 

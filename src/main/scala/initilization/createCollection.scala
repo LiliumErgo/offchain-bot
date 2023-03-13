@@ -56,7 +56,7 @@ class createCollection(
     expiryTimestamp: Long,
     mintExpiryTimestamp: Long,
     returnCollectionTokensToArtist: Boolean,
-    socialMediaMap: mutable.Map[String, String],
+    socialMediaMap: mutable.LinkedHashMap[String, String],
     issuanceMetaDataMap: PlasmaMap[IndexKey, IssuanceValueAVL],
     issuerMetaDataMap: PlasmaMap[IndexKey, IssuerValue],
     priceOfNFTNanoErg: Long,

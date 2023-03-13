@@ -310,7 +310,7 @@ object stateBoxConstantsTest extends App {
   val encoder = new metadataTranscoder.Encoder
   val decoder = new metadataTranscoder.Decoder
 
-  val royaltyMap: mutable.Map[Address, Int] = mutable.Map()
+  val royaltyMap: mutable.LinkedHashMap[Address, Int] = mutable.LinkedHashMap()
 
   private val collectionJsonFilePath = "collection.json"
   private val collectionFromJson = collectionParser.read(collectionJsonFilePath)
