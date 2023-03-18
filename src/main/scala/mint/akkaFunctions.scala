@@ -123,8 +123,27 @@ class akkaFunctions {
 
   private def mintNFT(
       proxyInputArray: Array[InputBox],
-      latestStateBoxInput: util.ArrayList[String]
+      latestStateBoxInput: util.ArrayList[String],
+      dataBaseResponse: LiliumEntry
   ): Unit = {
+
+    val issuanceTreeFromDB = PlasmaMap[IndexKey, IssuanceValueAVL](
+      AvlTreeFlags.AllOperationsAllowed,
+      PlasmaParameters.default
+    )
+    val issuerTreeFromDB = PlasmaMap[IndexKey, IssuerValue](
+      AvlTreeFlags.AllOperationsAllowed,
+      PlasmaParameters.default
+    )
+
+    avlUtils.AVLFromExport[IndexKey, IssuanceValueAVL](
+      dataBaseResponse.issuance_avl_bytes,
+      issuanceTreeFromDB
+    )
+    avlUtils.AVLFromExport[IndexKey, IssuerValue](
+      dataBaseResponse.issuer_avl_bytes,
+      issuerTreeFromDB
+    )
 
     for (proxyInput <- proxyInputArray) {
 
@@ -139,27 +158,6 @@ class akkaFunctions {
         return
       }
 
-      val dataBaseResponse: LiliumEntry =
-        DatabaseAPI.getRow(stateBoxInput.getTokens.get(0).getId.toString)
-
-      val issuanceTreeFromDB = PlasmaMap[IndexKey, IssuanceValueAVL](
-        AvlTreeFlags.AllOperationsAllowed,
-        PlasmaParameters.default
-      )
-      val issuerTreeFromDB = PlasmaMap[IndexKey, IssuerValue](
-        AvlTreeFlags.AllOperationsAllowed,
-        PlasmaParameters.default
-      )
-
-      avlUtils.AVLFromExport[IndexKey, IssuanceValueAVL](
-        dataBaseResponse.issuance_avl_bytes,
-        issuanceTreeFromDB
-      )
-      avlUtils.AVLFromExport[IndexKey, IssuerValue](
-        dataBaseResponse.issuer_avl_bytes,
-        issuerTreeFromDB
-      )
-
       val issuerTxn = this.issuerTxn(
         stateBoxInput,
         proxyInput,
@@ -170,10 +168,12 @@ class akkaFunctions {
 
       println("Issuer Tx: " + txHelper.sendTx(issuerTxn))
 
-      val r4 = proxyInput.getRegisters.get(0).toHex
-      val prop =
-        ErgoValue.fromHex(r4).getValue.asInstanceOf[special.sigma.SigmaProp]
-      val proxySender = new org.ergoplatform.appkit.SigmaProp(prop)
+      val r4 = proxyInput.getRegisters
+        .get(0)
+        .getValue
+        .asInstanceOf[special.sigma.SigmaProp]
+
+      val proxySender = new org.ergoplatform.appkit.SigmaProp(r4)
         .toAddress(this.ctx.getNetworkType)
 
       if (issuerTxn.getOutputsToSpend.size() == 3) {
@@ -250,7 +250,8 @@ class akkaFunctions {
 
     mintNFT(
       boxes,
-      latestStateBoxInput
+      latestStateBoxInput,
+      DatabaseAPI.getRow(singletonId)
     )
   }
 

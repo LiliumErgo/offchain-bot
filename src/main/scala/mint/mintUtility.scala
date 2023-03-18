@@ -322,6 +322,8 @@ class mintUtility(
       }
     }
 
+    OutBox.foreach(o => println(o.getValue))
+
     OutBox.foreach(o => outValue.append(o.getValue))
 
     println("Output Value: " + outValue.sum)
