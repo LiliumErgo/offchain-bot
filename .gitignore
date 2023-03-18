@@ -33,6 +33,8 @@ project/metals.sbt
 
 # vs code
 .vscode
+
+
 serviceOwner.json
 contracts.json
 collection.json
