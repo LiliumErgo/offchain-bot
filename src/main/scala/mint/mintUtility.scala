@@ -45,9 +45,9 @@ class mintUtility(
   def convertERGLongToDouble(num: Long): Double = {
     val value = num * math.pow(10, -9)
     val x =
-      (math floor value * math.pow(10, num.toString.length + 2)) / math.pow(
+      (math floor value * math.pow(10, num.toString.length + 4)) / math.pow(
         10,
-        num.toString.length + 2
+        num.toString.length + 4
       )
     val bNum = math.BigDecimal(x)
     val finalNum = bNum.underlying().stripTrailingZeros()
@@ -159,7 +159,7 @@ class mintUtility(
       inputValue.append(input.getValue)
     }
 
-    println("Input Value: " + inputValue.sum)
+//    println("Input Value: " + inputValue.sum)
 //    inputValueIdeal.append(input0.getValue)
 //    inputValueIdeal.append(proxyInput.getValue)
 //    val buyerAmountPaid = 0.003
@@ -230,8 +230,8 @@ class mintUtility(
     val newStateBox: OutBox = {
       if (r6 + 1L == collectionMaxSize) { //last sale outbox
         println("Last Sale")
-        println("r6 + 1L = " + r6 + 1L)
-        println("collectionMaxSize: " + collectionMaxSize)
+//        println("r6 + 1L = " + r6 + 1L)
+//        println("collectionMaxSize: " + collectionMaxSize)
         outBoxObj.lastStateBox(
           stateContract,
           issuanceTree,
@@ -298,6 +298,8 @@ class mintUtility(
 
 //    val liliumFee = 5000000
 
+//    println("Lilium Fee: " + liliumFee)
+
     val liliumFeeAddress = new org.ergoplatform.appkit.SigmaProp(
       stateContract.getErgoTree
         .constants(31)
@@ -322,11 +324,11 @@ class mintUtility(
       }
     }
 
-    OutBox.foreach(o => println(o.getValue))
+//    OutBox.foreach(o => println(o.getValue))
 
     OutBox.foreach(o => outValue.append(o.getValue))
 
-    println("Output Value: " + outValue.sum)
+//    println("Output Value: " + outValue.sum)
 
     val unsignedTx: UnsignedTransaction = {
       if (hasSaleEnded) {

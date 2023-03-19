@@ -121,7 +121,7 @@ object init extends App {
     issuerMetaDataMap = issuerTree.getMap,
     priceOfNFTNanoErg = collectionFromJson.priceOfNFTNanoErg,
     liliumFeeAddress = Address.create(serviceConf.liliumFeeAddress),
-    liliumFeeNanoErg = serviceConf.liliumFeeNanoErg,
+    liliumFeePercent = serviceConf.liliumFeePercent,
     minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg,
     minerFee = serviceConf.minerFeeNanoErg
   )
