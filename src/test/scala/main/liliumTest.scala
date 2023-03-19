@@ -336,7 +336,7 @@ object stateBoxConstantsTest extends App {
   )
   val priceOfNFTNanoErg = collectionFromJson.priceOfNFTNanoErg
   val liliumFeeAddress = Address.create(serviceConf.liliumFeeAddress)
-  val liliumFeeNanoErg = serviceConf.liliumFeeNanoErg
+  val liliumFeePercent = serviceConf.liliumFeePercent
   val minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg
   val minerFee = serviceConf.minerFeeNanoErg
 
@@ -350,7 +350,7 @@ object stateBoxConstantsTest extends App {
     singletonToken,
     priceOfNFTNanoErg,
     liliumFeeAddress,
-    liliumFeeNanoErg,
+    liliumFeePercent,
     minTxOperatorFeeNanoErg,
     minerFee
   )
@@ -392,6 +392,12 @@ object stateBoxConstantsTest extends App {
   )
     .toAddress(this.ctx.getNetworkType)
 
+  val liliumFeeValue =
+    stateContract.getErgoTree.constants(30).value.asInstanceOf[Long]
+
+  val priceOfNFTNanoErgDecoded =
+    stateContract.getErgoTree.constants(29).value.asInstanceOf[Long]
+
   println(s"Miner Fee: $minerFee, Decoded: $minerFeeDecoded")
   println(
     s"Collection Token: ${collectionToken.getId.toString}, Decoded: ${mockCollectionToken.getId.toString}"
@@ -399,9 +405,18 @@ object stateBoxConstantsTest extends App {
   println(
     s"Artist Address: ${artistAddress.toString}, Decoded: ${artistAddressDecoded.toString}"
   )
-  println(s"Lilium Fee: $liliumFeeNanoErg, Decoded: $liliumFeeDecoded")
+
+  println(
+    s"NFT Cost: ${collectionFromJson.priceOfNFTNanoErg}, Decoded: $priceOfNFTNanoErgDecoded"
+  )
+
+  println(
+    s"Lilium Fee Numerator: ${serviceConf.liliumFeePercent}, Decoded: ${(liliumFeeValue.toDouble / collectionFromJson.priceOfNFTNanoErg.toDouble) * 100}"
+  )
   println(
     s"Lilium Fee Address: ${liliumFeeAddress.toString}, Decoded: ${liliumFeeAddressDecoded.toString}"
   )
+
+//  stateContract.getErgoTree.constants.foreach(o => println(o.value))
 
 }

@@ -4,9 +4,13 @@ import AVL.IssuerBox.IssuerValue
 import AVL.NFT.{IndexKey, IssuanceValueAVL}
 import AVL.utils.avlUtils
 import AVL.utils.avlUtils.exportAVL
+import com.google.gson.Gson
 import configs.conf
 import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap}
 import mint.DefaultNodeInfo
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.util.EntityUtils
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import org.ergoplatform.appkit.{
   Address,
@@ -17,6 +21,7 @@ import org.ergoplatform.appkit.{
   ErgoValue,
   InputBox,
   OutBox,
+  Parameters,
   SignedTransaction
 }
 import sigmastate.eval.Colls
@@ -34,6 +39,12 @@ import utils.{
 
 import java.util
 import scala.collection.mutable.ListBuffer
+
+case class Ergo(usd: Double)
+case class CoinGekoFormat(
+    ergo: Ergo
+)
+
 class createCollection(
     ctx: BlockchainContext,
     liliumTxOperatorMnemonic: String,
@@ -61,10 +72,40 @@ class createCollection(
     issuerMetaDataMap: PlasmaMap[IndexKey, IssuerValue],
     priceOfNFTNanoErg: Long,
     liliumFeeAddress: Address,
-    liliumFeeNanoErg: Long,
+    liliumFeePercent: Long,
     minTxOperatorFeeNanoErg: Long,
     minerFee: Long
 ) {
+
+  def getERGUSD: Double = {
+    try {
+      val ERGUSD = new HttpGet(
+        s"https://api.coingecko.com/api/v3/simple/price?ids=ergo&vs_currencies=USD"
+      )
+      val client = HttpClients.custom().build()
+      val response = client.execute(ERGUSD)
+      val resp = EntityUtils.toString(response.getEntity)
+      val gson = new Gson()
+      gson.fromJson(resp, classOf[CoinGekoFormat]).ergo.usd
+    } catch {
+      case e: Exception => throw new IllegalAccessException("api error")
+    }
+  }
+
+  def calulateLiliumFee(amountNFTs: Long): Long = {
+    val alpha = 54.10
+    val beta = 0.03
+    val feeUSD =
+      math.floor(alpha * math.log((beta * amountNFTs) + 1)).asInstanceOf[Int]
+
+    val ERGUSD = getERGUSD
+    val feeNanoERGs = (BigDecimal(feeUSD / ERGUSD)
+      .setScale(3, BigDecimal.RoundingMode.HALF_UP)
+      .toDouble * Parameters.OneErg).toLong
+
+    feeNanoERGs
+  }
+
   private val exp = new explorerApi(
     DefaultNodeInfo(ctx.getNetworkType).explorerUrl
   )
@@ -118,7 +159,12 @@ class createCollection(
   )
 
   private val genesisTX: SignedTransaction =
-    txHelper.simpleSend(List(txHelper.senderAddress), List(0.02))
+    txHelper.simpleSend(
+      List(txHelper.senderAddress),
+      List(
+        0.02 + convertERGLongToDouble(calulateLiliumFee(collectionTokensAmount))
+      )
+    )
   val genesisOutBox: InputBox = genesisTX.getOutputsToSpend.get(0)
   val inputBoxList = new util.ArrayList[InputBox]()
   inputBoxList.add(genesisOutBox)
@@ -143,7 +189,7 @@ class createCollection(
 
   private val liliumFeeBox = outBoxObj.payoutBox(
     txHelper.senderAddress,
-    (liliumFeeNanoErg * math.pow(10, -9))
+    convertERGLongToDouble(calulateLiliumFee(collectionTokensAmount))
   )
 
   private val initTransactionP1 = txHelper.signTransaction(
@@ -190,7 +236,7 @@ class createCollection(
     ),
     priceOfNFTNanoErg,
     liliumFeeAddress,
-    liliumFeeNanoErg,
+    liliumFeePercent,
     minTxOperatorFeeNanoErg,
     minerFee
   )
@@ -319,9 +365,9 @@ class createCollection(
   def convertERGLongToDouble(num: Long): Double = {
     val value = num * math.pow(10, -9)
     val x =
-      (math floor value * math.pow(10, num.toString.length + 2)) / math.pow(
+      (math floor value * math.pow(10, num.toString.length + 4)) / math.pow(
         10,
-        num.toString.length + 2
+        num.toString.length + 4
       )
     val bNum = math.BigDecimal(x)
     val finalNum = bNum.underlying().stripTrailingZeros()
