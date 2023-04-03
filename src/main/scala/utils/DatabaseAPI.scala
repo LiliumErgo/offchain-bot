@@ -108,7 +108,7 @@ object DatabaseAPI {
       EntityUtils.toString(response.getEntity)
 
     if (resp == "[]") {
-      return null
+      return Array()
     }
 
     val parsedResponse = gson.fromJson(resp, classOf[Array[LiliumSingletons]])
