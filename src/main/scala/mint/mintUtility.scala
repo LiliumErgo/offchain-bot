@@ -57,7 +57,7 @@ class mintUtility(
   def buildIssuerTx(
       boxWithCollectionTokens: InputBox, //use singleton from db to get box
       proxyInput: InputBox, // get from api
-      issuerContract: String, // constant
+      issuerContract: ErgoContract, // constant
       encodedRoyalty: ErgoValue[ // create from db
         Coll[(Coll[Byte], Integer)]
       ],
@@ -211,7 +211,7 @@ class mintUtility(
 
     val issuerOutBox =
       outBoxObj.buildIssuerBox(
-        Address.create(issuerContract).toErgoContract,
+        issuerContract,
         issuerRegisters,
         new ErgoToken(input0.getTokens.get(1).getId.toString, 1),
         0.001 + convertERGLongToDouble(minerFee)
@@ -219,7 +219,7 @@ class mintUtility(
 
     val artistAddress: Address = new org.ergoplatform.appkit.SigmaProp(
       stateContract.getErgoTree
-        .constants(5)
+        .constants(3)
         .value
         .asInstanceOf[special.sigma.SigmaProp]
     ).toAddress(ctx.getNetworkType)

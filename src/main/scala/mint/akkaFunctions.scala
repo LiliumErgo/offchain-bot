@@ -57,10 +57,12 @@ class akkaFunctions {
   private val client: Client = new Client()
   client.setClient
   private val ctx = client.getContext
+  private val compiler = new ContractCompile(ctx)
   private val serviceFilePath = "serviceOwner.json"
   private val contractConfFilePath = "contracts.json"
   private lazy val serviceConf = serviceOwnerConf.read(serviceFilePath)
-  private lazy val contractsConf = conf.read(contractConfFilePath)
+  private val issuerContract =
+    compiler.compileIssuerContract(LiliumContracts.IssuerContract.contractScript)
 
   private val exp = new explorerApi(
     DefaultNodeInfo(ctx.getNetworkType).explorerUrl
@@ -89,7 +91,7 @@ class akkaFunctions {
     mintUtil.buildIssuerTx(
       stateBox,
       proxyInput,
-      contractsConf.Contracts.issuerContract.contract,
+      issuerContract,
       ErgoValue
         .fromHex(encodedRoyaltyHex)
         .asInstanceOf[ErgoValue[Coll[(Coll[Byte], Integer)]]],
@@ -209,7 +211,7 @@ class akkaFunctions {
     val stateBox: OutputInfo = {
       try {
         val res = exp.getUnspentBoxFromTokenID(singletonId)
-        if (res == null) return
+        if (res == null || res.getAdditionalRegisters.size() < 5) return
         else res
       } catch {
         case e: Exception => return
@@ -235,10 +237,12 @@ class akkaFunctions {
 
 //    val priceOfNFTNanoErg: Long = 2000000
 
+    val stateBoxTimeStamp = exp.getErgoBoxfromID(stateBox.getBoxId).additionalRegisters(ErgoBox.R7).value.asInstanceOf[(Long, Long)]._1
+
     val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
 
     val boxes: Array[InputBox] = boxJson
-      .filter(box => validateProxyBox(box, singletonTokenId, priceOfNFTNanoErg))
+      .filter(box => validateProxyBox(box, singletonTokenId, priceOfNFTNanoErg, stateBoxTimeStamp))
       .map(boxAPIObj.convertJsonBoxToErgoBox)
 
     if (boxes.length == 0) {
@@ -283,9 +287,10 @@ class akkaFunctions {
   def validateProxyBox(
       box: BoxJson,
       singleton: String,
-      value: Long
+      value: Long,
+      timeStamp: Long
   ): Boolean = {
-    box.additionalRegisters.R4 != null && box.additionalRegisters.R5.serializedValue == singleton && box.value >= value
+    box.additionalRegisters.R4 != null && box.additionalRegisters.R5.serializedValue == singleton && box.value >= value && timeStamp < System.currentTimeMillis()
   }
 
 }

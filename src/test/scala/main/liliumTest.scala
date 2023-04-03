@@ -356,6 +356,7 @@ object stateBoxConstantsTest extends App {
   )
 
   println(stateContract.toAddress.toString)
+  stateContract.getErgoTree.constants.foreach(println)
 
   val minerFeeDecoded = stateContract.getErgoTree
     .constants(38)
@@ -374,7 +375,7 @@ object stateBoxConstantsTest extends App {
 
   val artistAddressDecoded: Address = new org.ergoplatform.appkit.SigmaProp(
     stateContract.getErgoTree
-      .constants(5)
+      .constants(3)
       .value
       .asInstanceOf[special.sigma.SigmaProp]
   ).toAddress(ctx.getNetworkType)
