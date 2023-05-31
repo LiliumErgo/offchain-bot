@@ -62,7 +62,9 @@ class akkaFunctions {
   private val contractConfFilePath = "contracts.json"
   private lazy val serviceConf = serviceOwnerConf.read(serviceFilePath)
   private val issuerContract =
-    compiler.compileIssuerContract(LiliumContracts.IssuerContract.contractScript)
+    compiler.compileIssuerContract(
+      LiliumContracts.IssuerContract.contractScript
+    )
 
   private val exp = new explorerApi(
     DefaultNodeInfo(ctx.getNetworkType).explorerUrl
@@ -230,19 +232,51 @@ class akkaFunctions {
       )
       .toErgoContract
 
-    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-      .constants(29)
-      .value
-      .asInstanceOf[Long]
+    val priceOfNFTNanoErg: Long =
+      try {
+        val priceOfNFTNanoErg = stateContract.getErgoTree
+          .constants(31)
+          .value
+          .asInstanceOf[Long]
+
+        val minerFee = stateContract.getErgoTree
+          .constants(40)
+          .value
+          .asInstanceOf[Long]
+
+        val boxCreationFee = 1000000
+
+        val liliumFee = stateContract.getErgoTree
+          .constants(32)
+          .value
+          .asInstanceOf[Long]
+
+        
+
+      } catch {
+        case e: Exception => println("error with decoding NFT price"); return
+      }
 
 //    val priceOfNFTNanoErg: Long = 2000000
 
-    val stateBoxTimeStamp = exp.getErgoBoxfromID(stateBox.getBoxId).additionalRegisters(ErgoBox.R7).value.asInstanceOf[(Long, Long)]._1
+    val stateBoxTimeStamp = exp
+      .getErgoBoxfromID(stateBox.getBoxId)
+      .additionalRegisters(ErgoBox.R7)
+      .value
+      .asInstanceOf[(Long, Long)]
+      ._1
 
     val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
 
     val boxes: Array[InputBox] = boxJson
-      .filter(box => validateProxyBox(box, singletonTokenId, priceOfNFTNanoErg, stateBoxTimeStamp))
+      .filter(box =>
+        validateProxyBox(
+          box,
+          singletonTokenId,
+          priceOfNFTNanoErg,
+          stateBoxTimeStamp
+        )
+      )
       .map(boxAPIObj.convertJsonBoxToErgoBox)
 
     if (boxes.length == 0) {
@@ -290,7 +324,8 @@ class akkaFunctions {
       value: Long,
       timeStamp: Long
   ): Boolean = {
-    box.additionalRegisters.R4 != null && box.additionalRegisters.R5.serializedValue == singleton && box.value >= value && timeStamp < System.currentTimeMillis()
+    box.additionalRegisters.R4 != null && box.additionalRegisters.R5.serializedValue == singleton && box.value >= value && timeStamp < System
+      .currentTimeMillis()
   }
 
 }

@@ -173,10 +173,11 @@ class mintUtility(
       issuerTree.lookUp(IndexKey(r6)).response.head.get.metaData
     )
     val encodedMetadata = encoder.encodeMetaData(
-      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]],
-      decodedMetadata(1)
+      decodedMetadata(0).asInstanceOf[Boolean],
+      decodedMetadata(1).asInstanceOf[mutable.LinkedHashMap[String, String]],
+      decodedMetadata(2)
         .asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]],
-      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+      decodedMetadata(3).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
     )
 
     println(

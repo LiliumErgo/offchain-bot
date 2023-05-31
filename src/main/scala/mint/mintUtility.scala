@@ -2,6 +2,7 @@ package mint
 
 import AVL.IssuerBox.{IssuerHelpersAVL, IssuerValue}
 import AVL.NFT.{IndexKey, IssuanceAVLHelpers, IssuanceValueAVL}
+import com.google.common.primitives.Longs
 import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap, Proof}
 import org.bouncycastle.util.encoders.Hex
 import org.ergoplatform.ErgoBox.R9
@@ -16,6 +17,7 @@ import sigmastate.eval.Colls
 import special.collection.Coll
 import utils.{MetadataTranscoder, OutBoxes, TransactionHelper, explorerApi}
 
+import java.nio.charset.StandardCharsets
 import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -107,7 +109,7 @@ class mintUtility(
     }
 
     val minerFee = stateContract.getErgoTree
-      .constants(38)
+      .constants(40)
       .value
       .asInstanceOf[Long]
 
@@ -177,11 +179,14 @@ class mintUtility(
     val decodedMetadata = decoder.decodeMetadata(
       issuerTree.lookUp(IndexKey(r6)).response.head.get.metaData
     )
+    val explicit = decodedMetadata(0).asInstanceOf[Boolean]
+
     val encodedMetadata = encoder.encodeMetaData(
-      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]],
-      decodedMetadata(1)
+      explicit,
+      decodedMetadata(1).asInstanceOf[mutable.LinkedHashMap[String, String]],
+      decodedMetadata(2)
         .asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]],
-      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+      decodedMetadata(3).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
     )
 
 //    println(
@@ -194,16 +199,21 @@ class mintUtility(
 //      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
 //    )
 
-    val emptyArray = new util.ArrayList[Coll[Byte]]()
+//    val emptyArray = new util.ArrayList[Coll[Byte]]()
+val encodedExplicit = {
+  val explicitValue = if (explicit) 1.toByte else 0.toByte
+  ErgoValueBuilder.buildFor(Colls.fromArray(Array(
+    (Colls.fromArray("explicit".getBytes(StandardCharsets.UTF_8)), Colls.fromArray(Array(explicitValue)))
+  )))
+}
+
 
     val issuerRegisters: Array[ErgoValue[_]] = Array(
       ErgoValue.of(2),
       encodedRoyalty,
       encodedMetadata,
       ErgoValue.of(mockCollectionToken.getId.getBytes),
-      ErgoValueBuilder.buildFor(
-        Colls.fromArray(emptyArray.asScala.toArray)
-      ),
+      encodedExplicit,
       ErgoValueBuilder.buildFor(
         (ErgoValue.of(proxySender.getPublicKey).getValue, r6)
       )
@@ -280,7 +290,7 @@ class mintUtility(
     }
 
     val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-      .constants(29)
+      .constants(31)
       .value
       .asInstanceOf[Long]
 
@@ -292,7 +302,7 @@ class mintUtility(
     )
 
     val liliumFee = stateContract.getErgoTree
-      .constants(30)
+      .constants(32)
       .value
       .asInstanceOf[Long]
 
@@ -302,7 +312,7 @@ class mintUtility(
 
     val liliumFeeAddress = new org.ergoplatform.appkit.SigmaProp(
       stateContract.getErgoTree
-        .constants(31)
+        .constants(33)
         .value
         .asInstanceOf[special.sigma.SigmaProp]
     )
@@ -417,7 +427,7 @@ class mintUtility(
       .toErgoContract
 
     val minerFee = stateContract.getErgoTree
-      .constants(38)
+      .constants(40)
       .value
       .asInstanceOf[Long]
 
@@ -438,4 +448,3 @@ class mintUtility(
   }
 
 }
-//hello

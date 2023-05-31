@@ -327,11 +327,11 @@ object stateBoxConstantsTest extends App {
   val artistAddress =
     Address.create("3WwHSFPhz6867vwYmuGQ4m634DQvT5u2Hpp2jit94EVLkacLEn44")
   val collectionToken = new ErgoToken(
-    "9b62881b696a83adc60735cbd68556bddc7b7a2387f568c79710fe98a8aadb52",
+    "a633ef9cfdf70ef216e2ca089c6ddc64f0afb65dcb61245f4f0dc2f47ec344b7",
     500
   )
   val singletonToken = new ErgoToken(
-    "0b3d74a45f11cdda86e3e3533295d66a10bb47c1a824e26e4fed1285365d41fa",
+    "793f4232b839c47e806c3cc9657a4222f24efe3a4320ea6be1dee3dfcaf29349",
     1
   )
   val priceOfNFTNanoErg = collectionFromJson.priceOfNFTNanoErg
@@ -340,28 +340,30 @@ object stateBoxConstantsTest extends App {
   val minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg
   val minerFee = serviceConf.minerFeeNanoErg
 
-  val stateContract = compiler.compileStateContract(
-    LiliumContracts.StateContract.contractScript,
-    proxyContract,
-    issuerContract,
-    artistAddress,
-    hashedRoyalty,
-    collectionToken,
-    singletonToken,
-    priceOfNFTNanoErg,
-    liliumFeeAddress,
-    liliumFeePercent,
-    minTxOperatorFeeNanoErg,
-    minerFee
-  )
+//  val stateContract = compiler.compileStateContract(
+//    LiliumContracts.StateContract.contractScript,
+//    proxyContract,
+//    issuerContract,
+//    artistAddress,
+//    hashedRoyalty,
+//    collectionToken,
+//    singletonToken,
+//    priceOfNFTNanoErg,
+//    liliumFeeAddress,
+//    liliumFeePercent,
+//    minTxOperatorFeeNanoErg,
+//    minerFee
+//  )
+
+  val stateContract = Address.create("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").toErgoContract
 
   println(stateContract.toAddress.toString)
   stateContract.getErgoTree.constants.foreach(println)
 
+
   val minerFeeDecoded = stateContract.getErgoTree
-    .constants(38)
+    .constants(40)
     .value
-    .asInstanceOf[Long]
 
   val mockCollectionToken: ErgoToken =
     new ErgoToken( // called mock since value is not accurate, we just want the token methods
@@ -381,23 +383,23 @@ object stateBoxConstantsTest extends App {
   ).toAddress(ctx.getNetworkType)
 
   val liliumFeeDecoded = stateContract.getErgoTree
-    .constants(30)
+    .constants(31)
     .value
     .asInstanceOf[Long]
 
   val liliumFeeAddressDecoded = new org.ergoplatform.appkit.SigmaProp(
     stateContract.getErgoTree
-      .constants(31)
+      .constants(33)
       .value
       .asInstanceOf[special.sigma.SigmaProp]
   )
     .toAddress(this.ctx.getNetworkType)
 
   val liliumFeeValue =
-    stateContract.getErgoTree.constants(30).value.asInstanceOf[Long]
+    stateContract.getErgoTree.constants(32).value.asInstanceOf[Long]
 
   val priceOfNFTNanoErgDecoded =
-    stateContract.getErgoTree.constants(29).value.asInstanceOf[Long]
+    stateContract.getErgoTree.constants(31).value.asInstanceOf[Long]
 
   println(s"Miner Fee: $minerFee, Decoded: $minerFeeDecoded")
   println(

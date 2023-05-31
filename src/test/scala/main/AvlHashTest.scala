@@ -31,19 +31,20 @@ object AvlHashTest extends App {
     res.stats.map(a => a.trait_type -> (a.value, a.max_value)): _*
   )
 
-  val issuerDataToInsert = IssuerValue.createMetadata(
-    encoder
-      .encodeMetaData(
-        attributesMap,
-        levelsMap,
-        statsMap
-      )
-      .getValue
-  )
-
-  val blakeHash = Hex.toHexString(Blake2b256.hash(issuerDataToInsert.toBytes))
-
-  println(issuerDataToInsert.toBytes.mkString("Array(", ", ", ")"))
-  println(blakeHash)
+//  val issuerDataToInsert = IssuerValue.createMetadata(
+//    encoder
+//      .encodeMetaData(
+//        false
+//        attributesMap,
+//        levelsMap,
+//        statsMap
+//      )
+//      .getValue
+//  )
+//
+//  val blakeHash = Hex.toHexString(Blake2b256.hash(issuerDataToInsert.toBytes))
+//
+//  println(issuerDataToInsert.toBytes.mkString("Array(", ", ", ")"))
+//  println(blakeHash)
 
 }

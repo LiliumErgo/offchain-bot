@@ -29,7 +29,6 @@ object avlUtils {
       val levelsMap = mutable.LinkedHashMap(
         res.levels.map(a => a.trait_type -> (a.value, a.max_value)): _*
       )
-
       val statsMap = mutable.LinkedHashMap(
         res.stats.map(a => a.trait_type -> (a.value, a.max_value)): _*
       )
@@ -37,7 +36,7 @@ object avlUtils {
       val issuanceDataToInsert = IssuanceValueAVL.createMetadata(
         res.name,
         res.description,
-        "picture",
+        res.assetType,
         res.imageSHA256,
         res.image
       )
@@ -45,6 +44,7 @@ object avlUtils {
       val issuerDataToInsert = IssuerValue.createMetadata(
         encoder
           .encodeMetaData(
+            res.explicit,
             attributesMap,
             levelsMap,
             statsMap
