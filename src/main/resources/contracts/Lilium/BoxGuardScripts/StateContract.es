@@ -13,6 +13,7 @@
    // R6: Long => Index
    // R7: (Long, Long) => Sale Starting and Ending Timestamps
    // R8: Boolean => If true, collection tokens will be returned to artist after expiry if there are NFTs left
+   // R9: Coll[Byte] => WhitelistTokenId
 
    // ===== Compile Time Constants ===== //
    // _artistSigmaProp: SigmaProp
@@ -21,6 +22,7 @@
    // _royaltyBlakeHash: Coll[Byte]
    // _collectionToken: Coll[Byte]
    // _singletonToken: Coll[Byte]
+   // _whitelistAccepted: Boolean
    // _priceOfNFT: Long
    // _liliumSigmaProp: SigmaProp
    // _liliumFeeNum: Long
@@ -135,17 +137,30 @@
 
          val validUserBox: Boolean = {
 
-            allOf(Coll(
-               (userBoxOUT.value == _priceOfNFT),
-               (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
-            ))
+            // if the buyer has the accepted whitelist token, then they get the NFT for free and the artists gets the whitelist token back.
+            if (_whitelistAccepted && (buyerProxyBox.tokens(0)._1 == SELF.R9[Coll[Byte]].get)) {
+
+               allOf(Coll(
+                  (userBoxOUT.value == buyerProxyBox.value - _minerFee),
+                  (userBoxOUT.tokens(0) == buyerProxyBox.tokens(0)),
+                  (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+               ))
+
+            } else { // if no whitelist token, then the buyer must pay the artist the full price.
+
+               allOf(Coll(
+                  (userBoxOUT.value == _priceOfNFT),
+                  (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+               ))
+
+            }
 
          }
 
          val validLiliumBox: Boolean = {
 
             allOf(Coll(
-               (liliumBoxOUT.value == (_liliumFeeNum * _priceOfNFT) / _liliumFeeDenom),
+               (liliumBoxOUT.value == (_liliumFeeNum * _priceOfNFT) / _liliumFeeDenom), // user or artist must still pay the Lilium fee.
                (liliumBoxOUT.propositionBytes == _liliumSigmaProp.propBytes)
             ))
 
@@ -173,7 +188,8 @@
       sigmaProp(validSaleTx)
 
       } else {
-// create box if sale has expired, do this by setting timestamp to like 5 minutes from now
+
+            // create box if sale has expired, do this by setting timestamp to like 5 minutes from now
             val validReturnOrBurnTx: Boolean = {
 
                // outputs
@@ -193,8 +209,10 @@
                         ))
 
                     } else {
-                    // maybe add condition here to ensure collection tokens get burned?
-                        OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
+
+                     // maybe add condition here to ensure collection tokens get burned?
+                     OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
+                    
                     }
 
                 }
