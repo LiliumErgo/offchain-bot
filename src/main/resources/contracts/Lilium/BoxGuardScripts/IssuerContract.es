@@ -35,14 +35,7 @@
 
     val validNFTIssuanceBox: Boolean = {
 
-      val validToken: Boolean = {
-
-        allOf(Coll(
-          (OUTPUTS(0).tokens(0)._1 == SELF.id),
-          (OUTPUTS(0).tokens.size == 1L)
-        ))
-
-      }
+      val validToken: Boolean = (OUTPUTS(0).tokens(0) == (SELF.id, 1L))
 
       val validMetadata: Boolean = {
 
