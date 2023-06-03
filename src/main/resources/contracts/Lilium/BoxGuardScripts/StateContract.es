@@ -12,7 +12,7 @@
    // R5: AvlTree => Issuer Box AVL
    // R6: Long => Index
    // R7: (Long, Long) => Sale Starting and Ending Timestamps
-   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, premintAccepted)
+   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted)
    // R9: (Coll[Byte], Coll[Byte]) => (WhitelistTokenId, PreMintTokenId)
 
    // ===== Compile Time Constants ===== //
@@ -35,11 +35,12 @@
    val isInfiniteSale: Boolean = (SELF.R7[(Long, Long)].get._2 == -1L)
    val isReturn: Boolean = SELF.R8[Coll[Boolean]].get(0)
    val whitelistAccepted: Boolean = SELF.R8[Coll[Boolean]].get(1)
-   val premintAccepted: Boolean = SELF.R8[Coll[Boolean]].get(2)
+   val whitelistBypass: Boolean = SELF.R8[Coll[Boolean]].get(2)
+   val premintAccepted: Boolean = SELF.R8[Coll[Boolean]].get(3)
    val whitelistTokenId: Coll[Byte] = SELF.R9[(Coll[Byte], Coll[Byte])].get._1
    val premintTokenId: Coll[Byte] = SELF.R9[(Coll[Byte], Coll[Byte])].get._2
 
-   if (hasSaleStarted || premintAccepted) {
+   if (hasSaleStarted || premintAccepted || whitelistBypass) {
 
       if (!hasSaleEnded || isInfiniteSale) {
 
@@ -191,25 +192,45 @@
 
                   }
 
-               } else if (premintAccepted) {
+               } else if (premintAccepted || (whitelistBypass && whitelistAccepted)) {
 
-                  val validPreMintSale: Boolean = {
+                  val hasWhitelistToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })
 
-                     allOf(Coll(
-                        buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == premintTokenId}),
-                        (userBoxOUT.value == _priceOfNFT),
-                        (userBoxOUT.tokens(0)._1 == premintTokenId),
-                        (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
-                     ))
+                  val hasPremintToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == premintTokenId})
 
+                  if(hasWhitelistToken){
+
+                       val validWhitelistBypass: Boolean = {
+
+                          // Note: Whitelisting does NOT bypass required Lilium Fee per mint
+
+                          allOf(Coll(
+                             (userBoxOUT.tokens(0)._1 == whitelistTokenId),
+                             (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                          ))
+
+                       }
+
+                       validWhitelistBypass
+                  } else if (hasPremintToken){
+
+                        val validPreMintSale: Boolean = {
+
+                           allOf(Coll(
+                              (userBoxOUT.value == _priceOfNFT),
+                              (userBoxOUT.tokens(0)._1 == premintTokenId),
+                              (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                           ))
+
+                        }
+
+                        validPreMintSale
+                  } else {
+                     false
                   }
-
-                  validPreMintSale
-
                } else {
                   false
                }
-
             }
 
             val validLiliumBox: Boolean = {
