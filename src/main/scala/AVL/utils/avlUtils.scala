@@ -42,9 +42,9 @@ object avlUtils {
       )
 
       val issuerDataToInsert = IssuerValue.createMetadata(
+        res.explicit,
         encoder
           .encodeMetaData(
-            res.explicit,
             attributesMap,
             levelsMap,
             statsMap
