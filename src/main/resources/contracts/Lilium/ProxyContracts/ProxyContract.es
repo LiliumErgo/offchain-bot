@@ -58,8 +58,8 @@
 
                 allOf(Coll(
                     (refundBoxOUT.value == SELF.value - _minerFee),
-                    (refundBoxOUT.propositionBytes == buyerPK.propBytes)
-                    // add condition to ensure all tokens from SELF gets transferred to refundBoxOUT
+                    (refundBoxOUT.propositionBytes == buyerPK.propBytes),
+                    (refundBoxOUT.tokens == SELF.tokens)
                 ))
             }
 
