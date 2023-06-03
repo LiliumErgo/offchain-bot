@@ -76,8 +76,8 @@ object init extends App {
     mutable.LinkedHashMap()
   private val collectionFromJson = collectionParser.read(collectionJsonFilePath)
 
-  collectionFromJson.royalty.asScala.foreach { case (key, value: Double) =>
-    royaltyMap += (Address.create(key) -> value.round.toInt)
+  collectionFromJson.royalty.foreach {item =>
+    royaltyMap += (Address.create(item.address) -> item.amount.round.toInt)
   }
   private val encodedRoyalty =
     encoder.encodeRoyalty(royaltyMap)

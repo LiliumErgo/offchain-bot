@@ -5,7 +5,6 @@ import AVL.NFT.IssuanceAVLHelpers
 import configs.{collectionParser, serviceOwnerConf}
 import contracts.LiliumContracts
 import initilization.createCollection
-
 import mint.{Client, DefaultNodeInfo}
 import org.ergoplatform.ErgoBox.{R4, R7, R9}
 import org.ergoplatform.appkit.impl.InputBoxImpl
@@ -15,9 +14,11 @@ import special.sigma.SigmaProp
 import testMint.akkaFunctions
 import utils.{BoxAPI, ContractCompile, MetadataTranscoder, explorerApi}
 
+import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 import java.util.{Map => JMap}
 import scala.collection.mutable
+import scala.collection.mutable.LinkedHashMap
 
 object contractPrintTest extends App {
 
@@ -315,8 +316,8 @@ object stateBoxConstantsTest extends App {
   private val collectionJsonFilePath = "collection.json"
   private val collectionFromJson = collectionParser.read(collectionJsonFilePath)
 
-  collectionFromJson.royalty.asScala.foreach { case (key, value: Double) =>
-    royaltyMap += (Address.create(key) -> value.round.toInt)
+  collectionFromJson.royalty.foreach { item =>
+    royaltyMap += (Address.create(item.address) -> item.amount.round.toInt)
   }
 
   val encodedRoyalty =
@@ -340,29 +341,36 @@ object stateBoxConstantsTest extends App {
   val minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg
   val minerFee = serviceConf.minerFeeNanoErg
 
-//  val stateContract = compiler.compileStateContract(
-//    LiliumContracts.StateContract.contractScript,
-//    proxyContract,
-//    issuerContract,
-//    artistAddress,
-//    hashedRoyalty,
-//    collectionToken,
-//    singletonToken,
-//    priceOfNFTNanoErg,
-//    liliumFeeAddress,
-//    liliumFeePercent,
-//    minTxOperatorFeeNanoErg,
-//    minerFee
-//  )
+  val stateContract = compiler.compileStateContract(
+    LiliumContracts.StateContract.contractScript,
+    proxyContract,
+    issuerContract,
+    artistAddress,
+    hashedRoyalty,
+    collectionToken,
+    singletonToken,
+    priceOfNFTNanoErg,
+    liliumFeeAddress,
+    liliumFeePercent,
+    minTxOperatorFeeNanoErg,
+    minerFee
+  )
 
-  val stateContract = Address.create("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").toErgoContract
+//  val stateContract = Address
+//    .create(
+//      "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"
+//    )
+//    .toErgoContract
 
   println(stateContract.toAddress.toString)
-  stateContract.getErgoTree.constants.foreach(println)
-
+  var i = 0
+  for(c <- stateContract.getErgoTree.constants){
+    println(i + ": " + c)
+    i = i + 1
+  }
 
   val minerFeeDecoded = stateContract.getErgoTree
-    .constants(40)
+    .constants(38)
     .value
 
   val mockCollectionToken: ErgoToken =
@@ -382,24 +390,24 @@ object stateBoxConstantsTest extends App {
       .asInstanceOf[special.sigma.SigmaProp]
   ).toAddress(ctx.getNetworkType)
 
-  val liliumFeeDecoded = stateContract.getErgoTree
-    .constants(31)
-    .value
-    .asInstanceOf[Long]
+//  val liliumFeeDecoded = stateContract.getErgoTree
+//    .constants(31)
+//    .value
+//    .asInstanceOf[Long]
 
   val liliumFeeAddressDecoded = new org.ergoplatform.appkit.SigmaProp(
     stateContract.getErgoTree
-      .constants(33)
+      .constants(36)
       .value
       .asInstanceOf[special.sigma.SigmaProp]
   )
     .toAddress(this.ctx.getNetworkType)
 
   val liliumFeeValue =
-    stateContract.getErgoTree.constants(32).value.asInstanceOf[Long]
+    stateContract.getErgoTree.constants(35).value.asInstanceOf[Long]
 
   val priceOfNFTNanoErgDecoded =
-    stateContract.getErgoTree.constants(31).value.asInstanceOf[Long]
+    stateContract.getErgoTree.constants(34).value.asInstanceOf[Long]
 
   println(s"Miner Fee: $minerFee, Decoded: $minerFeeDecoded")
   println(
@@ -422,4 +430,42 @@ object stateBoxConstantsTest extends App {
 
 //  stateContract.getErgoTree.constants.foreach(o => println(o.value))
 
+}
+
+object metadataIssue extends App {
+  private val metadataTranscoder = new MetadataTranscoder
+  private val encoder = new metadataTranscoder.Encoder
+  private val decoder = new metadataTranscoder.Decoder
+
+  val explicit = true
+
+  val attrMap = mutable.LinkedHashMap[String, String]()
+  attrMap("Background") = "Black"
+
+  val encodedMetadata = encoder.encodeMetaData(
+    attrMap,
+    mutable.LinkedHashMap[String, (Int, Int)](),
+    mutable.LinkedHashMap[String, (Int, Int)]()
+  )
+
+  val decodedMetadata = decoder.decodeMetadata(
+    "3c0c3c0e0e3c0c3c0e580c3c0e58070745796562616c6c05576869746507546f70206c6964064d6964646c650a426f74746f6d206c6964064d6964646c650449726973054c61726765055368696e65065368617065730945796520636f6c6f72035265640a4261636b67726f756e6405426c61636b0000"
+  )
+
+  println(encodedMetadata.toHex)
+  println(decodedMetadata.mkString("Array(", ", ", ")"))
+}
+
+object decodeExtraInfo extends App {
+  val hex = "0c3c0e0e01086578706c696369740100"
+  val metadata = ErgoValue
+    .fromHex(hex)
+    .asInstanceOf[ErgoValue[Coll[(Coll[Byte], Coll[Byte])]]]
+  val key = metadata.getValue.toArray(0)._1
+  val keyString = new String(
+    key.map(_.toByte).toArray,
+    StandardCharsets.UTF_8
+  )
+  val value = metadata.getValue.toArray(0)._2.map(_.toByte).toArray
+  println(value.mkString("Array(", ", ", ")"))
 }
