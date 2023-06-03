@@ -1,12 +1,10 @@
 {
-
-
     // ===== Contract Description ===== //
     // Name: Whitelist Issuer Contract
     // Description: Used to guard the issuer box of minting the whitelist tokens.
     // Version: 1.0.0
-    // Author: mgpai22@github.com
-    // Auditor: lucagdangelo@github.com
+    // Author: lucagdangelo@github.com
+    // Auditor: mgpai22@github.com
 
     // ===== Compile Time Constants ===== //
     // _WhitelistAmount: Long
@@ -30,6 +28,7 @@
 
         }
 
+        validWhitelistIssuanceBox
     }
 
     sigmaProp(validWhitelistMintTx) && _TxOperatorPK
