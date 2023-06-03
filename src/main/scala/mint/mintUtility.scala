@@ -44,6 +44,13 @@ class mintUtility(
   private val encoder = new metadataTranscoder.Encoder
   private val decoder = new metadataTranscoder.Decoder
 
+  private val artistAddressConstant = 3
+  private val minerFeeConstant = 38
+  private val collectionTokenConstant = 1
+  private val liliumFeeAddressConstant = 36
+  private val liliumFeeValueConstant = 35
+  private val priceOfNFTNanoErgConstant = 34
+
   def convertERGLongToDouble(num: Long): Double = {
     val value = num * math.pow(10, -9)
     val x =
@@ -109,7 +116,7 @@ class mintUtility(
     }
 
     val minerFee = stateContract.getErgoTree
-      .constants(40)
+      .constants(minerFeeConstant)
       .value
       .asInstanceOf[Long]
 
@@ -118,7 +125,7 @@ class mintUtility(
     val mockCollectionToken: ErgoToken =
       new ErgoToken( // called mock since value is not accurate, we just want the token methods
         stateContract.getErgoTree
-          .constants(1)
+          .constants(collectionTokenConstant)
           .value
           .asInstanceOf[Coll[Byte]]
           .toArray,
@@ -176,17 +183,15 @@ class mintUtility(
 
 //    println("r6: " + r6)
 
-    val decodedMetadata = decoder.decodeMetadata(
-      issuerTree.lookUp(IndexKey(r6)).response.head.get.metaData
-    )
-    val explicit = decodedMetadata(0).asInstanceOf[Boolean]
+    val response = issuerTree.lookUp(IndexKey(r6)).response.head.get
+    val decodedMetadata = decoder.decodeMetadata(response.metaData)
+    val explicit = response.explicit
 
     val encodedMetadata = encoder.encodeMetaData(
-      explicit,
-      decodedMetadata(1).asInstanceOf[mutable.LinkedHashMap[String, String]],
-      decodedMetadata(2)
+      decodedMetadata(0).asInstanceOf[mutable.LinkedHashMap[String, String]],
+      decodedMetadata(1)
         .asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]],
-      decodedMetadata(3).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
+      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
     )
 
 //    println(
@@ -199,14 +204,20 @@ class mintUtility(
 //      decodedMetadata(2).asInstanceOf[mutable.LinkedHashMap[String, (Int, Int)]]
 //    )
 
-//    val emptyArray = new util.ArrayList[Coll[Byte]]()
-val encodedExplicit = {
-  val explicitValue = if (explicit) 1.toByte else 0.toByte
-  ErgoValueBuilder.buildFor(Colls.fromArray(Array(
-    (Colls.fromArray("explicit".getBytes(StandardCharsets.UTF_8)), Colls.fromArray(Array(explicitValue)))
-  )))
-}
-
+    val emptyArray = new util.ArrayList[Coll[Byte]]()
+    val encodedExplicit = {
+      val explicitValue = if (explicit) 1.toByte else 0.toByte
+      ErgoValueBuilder.buildFor(
+        Colls.fromArray(
+          Array(
+            (
+              Colls.fromArray("explicit".getBytes(StandardCharsets.UTF_8)),
+              Colls.fromArray(Array(explicitValue))
+            )
+          )
+        )
+      )
+    }
 
     val issuerRegisters: Array[ErgoValue[_]] = Array(
       ErgoValue.of(2),
@@ -229,7 +240,7 @@ val encodedExplicit = {
 
     val artistAddress: Address = new org.ergoplatform.appkit.SigmaProp(
       stateContract.getErgoTree
-        .constants(3)
+        .constants(artistAddressConstant)
         .value
         .asInstanceOf[special.sigma.SigmaProp]
     ).toAddress(ctx.getNetworkType)
@@ -290,7 +301,7 @@ val encodedExplicit = {
     }
 
     val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-      .constants(31)
+      .constants(priceOfNFTNanoErgConstant)
       .value
       .asInstanceOf[Long]
 
@@ -302,7 +313,7 @@ val encodedExplicit = {
     )
 
     val liliumFee = stateContract.getErgoTree
-      .constants(32)
+      .constants(liliumFeeValueConstant)
       .value
       .asInstanceOf[Long]
 
@@ -312,7 +323,7 @@ val encodedExplicit = {
 
     val liliumFeeAddress = new org.ergoplatform.appkit.SigmaProp(
       stateContract.getErgoTree
-        .constants(33)
+        .constants(liliumFeeAddressConstant)
         .value
         .asInstanceOf[special.sigma.SigmaProp]
     )
@@ -427,7 +438,7 @@ val encodedExplicit = {
       .toErgoContract
 
     val minerFee = stateContract.getErgoTree
-      .constants(40)
+      .constants(minerFeeConstant)
       .value
       .asInstanceOf[Long]
 
