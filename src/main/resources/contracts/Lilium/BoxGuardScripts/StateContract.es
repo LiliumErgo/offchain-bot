@@ -87,7 +87,7 @@
 
                val startingValue = {
 
-                  if (explicit(0) == 0) {                  
+                  if (explicit(0) == 0) {
                      longToByteArray(0L)
                   } else {
                      longToByteArray(1L)
@@ -148,8 +148,8 @@
                   (stateBoxOUT.R5[AvlTree].get.digest == SELF.R5[AvlTree].get.digest), // correct issuance avl tree
                   (stateBoxOUT.R6[Long].get == index + 1L), // increment nft index
                   (stateBoxOUT.R7[(Long, Long)].get == SELF.R7[(Long, Long)]), // make sure start/end times are preserved
-                  (stateBoxOUT.R8[Coll[Boolean]].get = SELF.R8[Coll[Boolean]]), // make sure sale settings are preserved
-                  (stateBoxOUT.R9[(Coll[Byte], Coll[Byte])].get == SELF.R9[(Coll[Byte], Coll[Byte])].get) // make sure the whitelist/premint tokend ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
+                  (stateBoxOUT.R8[Coll[Boolean]].get == SELF.R8[Coll[Boolean]]), // make sure sale settings are preserved
+                  (stateBoxOUT.R9[(Coll[Byte], Coll[Byte])].get == SELF.R9[(Coll[Byte], Coll[Byte])].get) // make sure the whitelist/premint tokens ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
                ))
 
             }
@@ -157,14 +157,14 @@
             val validUserBox: Boolean = {
 
                // If the buyer has the accepted whitelist token, then they get the NFT for free and the artists gets the whitelist token back.
-               // If preminting is accepted, the buyer is able to get the NFT but for the full price.
+               // If premint is accepted, the buyer is able to get the NFT but for the full price.
 
                if (hasSaleStarted) {
 
                   val hasWhitelistToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })
 
                   if (whitelistAccepted && hasWhitelistToken) {
-                     
+
                      val validWhitelistSale: Boolean = {
 
                         // Note: Whitelisting does NOT bypass required Lilium Fee per mint
