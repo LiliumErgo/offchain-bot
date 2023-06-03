@@ -60,8 +60,8 @@
 
          // outputs
          val issuerBoxOUT: Box = OUTPUTS(0)
-         val stateBoxOUT: Box = OUTPUTS(1)
-         val userBoxOUT: Box = OUTPUTS(2)
+         val stateBoxOUT: Box = OUTPUTS(1) // Output which recreates self
+         val userBoxOUT: Box = OUTPUTS(2) // Output which goes to artist
          val liliumBoxOUT: Box = OUTPUTS(3)
          val minerBoxOUT: Box = OUTPUTS(4)
          val txOperatorBoxOUT: Box = OUTPUTS(5)
@@ -138,23 +138,29 @@
          val validUserBox: Boolean = {
 
             // if the buyer has the accepted whitelist token, then they get the NFT for free and the artists gets the whitelist token back.
-            if (_whitelistAccepted && (buyerProxyBox.tokens(0)._1 == SELF.R9[Coll[Byte]].get)) {
 
-               allOf(Coll(
-                  (userBoxOUT.value == buyerProxyBox.value - _minerFee),
-                  (userBoxOUT.tokens(0) == buyerProxyBox.tokens(0)),
-                  (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
-               ))
+            val validWhitelist: Boolean {
+            // Note: Whitelisting does NOT bypass required Lilium Fee per mint
 
-            } else { // if no whitelist token, then the buyer must pay the artist the full price.
+                if (_whitelistAccepted) {
+                   allOf(Coll(
+                       buyerProxyBox.tokens.exists{ (t: (Coll[Byte], Long)) => t._1 == SELF.R9[Coll[Byte]].get},
+                      (userBoxOUT.tokens(0)._1 == SELF.R9[Coll[Byte]].get),
+                      (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                   ))
+                } else {
+                    false
+                }
+            }
 
+            val normalSale: Boolean {
                allOf(Coll(
                   (userBoxOUT.value == _priceOfNFT),
                   (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
                ))
-
             }
 
+            validWhitelist || normalSale
          }
 
          val validLiliumBox: Boolean = {
@@ -212,7 +218,7 @@
 
                      // maybe add condition here to ensure collection tokens get burned?
                      OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
-                    
+
                     }
 
                 }
