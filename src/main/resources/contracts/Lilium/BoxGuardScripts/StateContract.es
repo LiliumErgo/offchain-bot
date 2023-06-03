@@ -13,6 +13,7 @@
    // R6: Long => Index
    // R7: (Long, Long) => Sale Starting and Ending Timestamps
    // R8: Boolean => If true, collection tokens will be returned to artist after expiry if there are NFTs left
+   // R9: Coll[Byte] => WhitelistTokenId
 
    // ===== Compile Time Constants ===== //
    // _artistSigmaProp: SigmaProp
@@ -21,6 +22,7 @@
    // _royaltyBlakeHash: Coll[Byte]
    // _collectionToken: Coll[Byte]
    // _singletonToken: Coll[Byte]
+   // _whitelistAccepted: Boolean
    // _priceOfNFT: Long
    // _liliumSigmaProp: SigmaProp
    // _liliumFeeNum: Long
@@ -58,8 +60,8 @@
 
          // outputs
          val issuerBoxOUT: Box = OUTPUTS(0)
-         val stateBoxOUT: Box = OUTPUTS(1)
-         val userBoxOUT: Box = OUTPUTS(2)
+         val stateBoxOUT: Box = OUTPUTS(1) // Output which recreates self
+         val userBoxOUT: Box = OUTPUTS(2) // Output which goes to artist
          val liliumBoxOUT: Box = OUTPUTS(3)
          val minerBoxOUT: Box = OUTPUTS(4)
          val txOperatorBoxOUT: Box = OUTPUTS(5)
@@ -145,17 +147,36 @@
 
          val validUserBox: Boolean = {
 
-            allOf(Coll(
-               (userBoxOUT.value == _priceOfNFT),
-               (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
-            ))
+            // if the buyer has the accepted whitelist token, then they get the NFT for free and the artists gets the whitelist token back.
 
+            val validWhitelist: Boolean {
+            // Note: Whitelisting does NOT bypass required Lilium Fee per mint
+
+                if (_whitelistAccepted) {
+                   allOf(Coll(
+                       buyerProxyBox.tokens.exists{ (t: (Coll[Byte], Long)) => t._1 == SELF.R9[Coll[Byte]].get},
+                      (userBoxOUT.tokens(0)._1 == SELF.R9[Coll[Byte]].get),
+                      (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                   ))
+                } else {
+                    false
+                }
+            }
+
+            val normalSale: Boolean {
+               allOf(Coll(
+                  (userBoxOUT.value == _priceOfNFT),
+                  (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+               ))
+            }
+
+            validWhitelist || normalSale
          }
 
          val validLiliumBox: Boolean = {
 
             allOf(Coll(
-               (liliumBoxOUT.value == (_liliumFeeNum * _priceOfNFT) / _liliumFeeDenom),
+               (liliumBoxOUT.value == (_liliumFeeNum * _priceOfNFT) / _liliumFeeDenom), // user or artist must still pay the Lilium fee.
                (liliumBoxOUT.propositionBytes == _liliumSigmaProp.propBytes)
             ))
 
@@ -183,7 +204,8 @@
       sigmaProp(validSaleTx)
 
       } else {
-// create box if sale has expired, do this by setting timestamp to like 5 minutes from now
+
+            // create box if sale has expired, do this by setting timestamp to like 5 minutes from now
             val validReturnOrBurnTx: Boolean = {
 
                // outputs
@@ -203,8 +225,10 @@
                         ))
 
                     } else {
-                    // maybe add condition here to ensure collection tokens get burned?
-                        OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
+
+                     // maybe add condition here to ensure collection tokens get burned?
+                     OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
+
                     }
 
                 }
