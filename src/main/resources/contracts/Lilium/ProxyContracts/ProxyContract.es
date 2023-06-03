@@ -8,7 +8,6 @@
     // ===== Box Registers ===== //
     // R4: SigmaProp => Buyer SigmaProp
     // R5: Coll[Byte] => State Box Singleton
-    // R6: Boolean => WhitelistAccepted
 
     // ===== Compile Time Constants ===== //
     // _minerFee: Long
@@ -19,7 +18,6 @@
     val isRefund: Boolean = (INPUTS.size == 1)
     val buyerPK: SigmaProp = SELF.R4[SigmaProp].get
     val stateBoxSingleton: Coll[Byte] = SELF.R5[Coll[Byte]].get
-    val whitelistAccepted: Boolean = SELF.R6[Boolean].get
 
     if (!isRefund) {
 
@@ -58,22 +56,11 @@
 
             val validRefundBox: Boolean = {
 
-                if (whitelistAccepted && (SELF.tokens.size == 1)) {
-
-                    allOf(Coll(
-                        (refundBoxOUT.value == SELF.value - _minerFee),
-                        (refundBoxOUT.propositionBytes == buyerPK.propBytes),
-                        (refundBoxOUT.tokens(0) == SELF.tokens(0))
-                    ))
-
-                } else {
-
-                    allOf(Coll(
-                        (refundBoxOUT.value == SELF.value - _minerFee),
-                        (refundBoxOUT.propositionBytes == buyerPK.propBytes)
-                    ))
-                }
-
+                allOf(Coll(
+                    (refundBoxOUT.value == SELF.value - _minerFee),
+                    (refundBoxOUT.propositionBytes == buyerPK.propBytes)
+                    // add condition to ensure all tokens from SELF gets transferred to refundBoxOUT
+                ))
             }
 
             val validMinerFee: Boolean = (minerBoxOUT.value == _minerFee)
