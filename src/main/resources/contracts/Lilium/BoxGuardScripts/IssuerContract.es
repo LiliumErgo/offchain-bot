@@ -1,5 +1,5 @@
 {
-  
+
   // ===== Contract Description ===== //
   // Name: NFT Issuer Contract
   // Description: This contract guards the issuer box. This box can only be spent to create an NFT if the NFT has the proper data in the issuance box.
@@ -39,11 +39,11 @@
 
     val validNFTIssuanceBox: Boolean = {
 
-      val validValue: Boolean = (SELF.value - _minerFee)
+      val validValue: Boolean = (nftIssuanceBoxOUT.value == (SELF.value - _minerFee))
 
       val validContract: Boolean = (nftIssuanceBoxOUT.propositionBytes == buyerSigmaProp.propBytes)
 
-      val validToken: Boolean = (OUTPUTS(0).tokens(0) == (SELF.id, 1L))
+      val validToken: Boolean = (nftIssuanceBoxOUT.tokens(0) == (SELF.id, 1L))
 
       val validMetadata: Boolean = {
 

@@ -103,7 +103,7 @@
                val royaltyBytes = royalty.fold(longToByteArray(0L), { (a: Coll[Byte], b: (Coll[Byte], Int)) => a ++ b._1 ++ longToByteArray(b._2.toLong) })
 
                allOf(Coll(
-                  (isserBoxOUT.value == _minBoxValue + _minerFee), // ensure correct value for the minting transaction
+                  (issuerBoxOUT.value == _minBoxValue + _minerFee), // ensure correct value for the minting transaction
                   (issuerBoxOUT.propositionBytes == _issuerContractBytes), // correct contract
                   (issuerBoxOUT.tokens(0) == (_collectionToken, 1L)), // transfer one collection token to the issuer box
                   (issuerBoxOUT.R4[Int].get == 2), // correct standard version
@@ -147,8 +147,8 @@
                   (stateBoxOUT.R4[AvlTree].get.digest == SELF.R4[AvlTree].get.digest), // correct issuer avl tree
                   (stateBoxOUT.R5[AvlTree].get.digest == SELF.R5[AvlTree].get.digest), // correct issuance avl tree
                   (stateBoxOUT.R6[Long].get == index + 1L), // increment nft index
-                  (stateBoxOUT.R7[(Long, Long)].get == SELF.R7[(Long, Long)]), // make sure start/end times are preserved
-                  (stateBoxOUT.R8[Coll[Boolean]].get == SELF.R8[Coll[Boolean]]), // make sure sale settings are preserved
+                  (stateBoxOUT.R7[(Long, Long)].get == SELF.R7[(Long, Long)].get), // make sure start/end times are preserved
+                  (stateBoxOUT.R8[Coll[Boolean]].get == SELF.R8[Coll[Boolean]].get), // make sure sale settings are preserved
                   (stateBoxOUT.R9[(Coll[Byte], Coll[Byte])].get == SELF.R9[(Coll[Byte], Coll[Byte])].get) // make sure the whitelist/premint tokens ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
                ))
 
@@ -180,7 +180,7 @@
 
                   } else {
 
-                     val validNormalSale: Boolean {
+                     val validNormalSale: Boolean = {
                         allOf(Coll(
                            (userBoxOUT.value == _priceOfNFT),
                            (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
@@ -224,7 +224,7 @@
                      }
 
                      validPreMintSale
-                         
+
                   } else {
                      false
                   }
