@@ -39,7 +39,7 @@ class conf(
     IssuerContract(issuerContract)
   val proxyContractInstance: ProxyContract = ProxyContract(proxyContract)
 
-  val conf = Config(
+  val conf: Config = Config(
     stateContractInstance,
     issuerContractInstance,
     proxyContractInstance,

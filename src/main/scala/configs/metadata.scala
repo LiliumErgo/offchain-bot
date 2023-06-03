@@ -41,7 +41,7 @@ case class Stats(trait_type: String, max_value: Int, value: Int)
 case class Collection(
     collectionInfo: CollectionInfo,
     socialMedia: java.util.Map[String, String],
-    royalty: java.util.Map[String, Double],
+    royalty: Array[Royalty],
     saleStartTimestamp: Long,
     saleEndTimestamp: Long,
     mintingExpiry: Long,
@@ -49,6 +49,8 @@ case class Collection(
     priceOfNFTNanoErg: Long,
     returnCollectionTokensToArtist: Boolean
 )
+
+case class Royalty(address: String, amount: Double)
 
 case class CollectionInfo(
     collectionName: String,
