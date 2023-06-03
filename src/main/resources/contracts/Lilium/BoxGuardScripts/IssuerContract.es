@@ -16,14 +16,14 @@
   // R9: Coll[(SigmaProp, Long)] => Buyer SigmaProp and Index
 
   // ===== Compile Time Constants ===== //
-  // None
+  // _minerFee: Long
 
   // ===== Context Extension Variables ===== //
   // None
 
   // ===== Relevant Variables ===== //
   val proof = getVar[Coll[Byte]](0).get
-  val buyerPropBytes: SigmaProp = SELF.R9[(SigmaProp, Long)].get._1.propBytes
+  val buyerSigmaProp: SigmaProp = SELF.R9[(SigmaProp, Long)].get._1
   val index: Long = SELF.R9[(SigmaProp, Long)].get._2
   val salesContractInput = CONTEXT.dataInputs(0) // ensure to check this is the legit stateContract with a singleton or something
   val metadataTree = salesContractInput.R4[AvlTree].get
@@ -33,18 +33,26 @@
 
   val validNFTMintTx: Boolean = {
 
+    // outputs
+    val nftIssuanceBoxOUT: Box = OUTPUTS(0)
+    val minerFeeOUT: Box = OUTPUTS(1)
+
     val validNFTIssuanceBox: Boolean = {
+
+      val validValue: Boolean = (SELF.value - _minerFee)
+
+      val validContract: Boolean = (nftIssuanceBoxOUT.propositionBytes == buyerSigmaProp.propBytes)
 
       val validToken: Boolean = (OUTPUTS(0).tokens(0) == (SELF.id, 1L))
 
       val validMetadata: Boolean = {
 
-        val R4 = OUTPUTS(0).R4[Coll[Byte]].get //name
-        val R5 = OUTPUTS(0).R5[Coll[Byte]].get //desc
-        val R6 = OUTPUTS(0).R6[Coll[Byte]].get // #decimals
-        val R7 = OUTPUTS(0).R7[Coll[Byte]].get // asset type
-        val R8 = OUTPUTS(0).R8[Coll[Byte]].get // SHA of media
-        val R9 = OUTPUTS(0).R9[Coll[Byte]].get // media link
+        val R4 = nftIssuanceBoxOUT.R4[Coll[Byte]].get // name
+        val R5 = nftIssuanceBoxOUT.R5[Coll[Byte]].get // desc
+        val R6 = nftIssuanceBoxOUT.R6[Coll[Byte]].get // #decimals
+        val R7 = nftIssuanceBoxOUT.R7[Coll[Byte]].get // asset type
+        val R8 = nftIssuanceBoxOUT.R8[Coll[Byte]].get // SHA of media
+        val R9 = nftIssuanceBoxOUT.R9[Coll[Byte]].get // media link
 
         val validHash: Boolean = (blake2b256( longToByteArray(R4.size.toLong) ++ R4 ++ longToByteArray(R5.size.toLong) ++ R5 ++  longToByteArray(R7.size.toLong) ++ R7 ++  longToByteArray(R8.size.toLong) ++ R8 ++  longToByteArray(R9.size.toLong) ++ R9 ) == blake2b256( valueFromAvlTree ))
         val validDecimals: Boolean = (R6 == fromBase64("MA=="))
@@ -57,17 +65,19 @@
       }
 
       allOf(Coll(
+        validValue,
+        validContract,
         validToken,
         validMetadata
       ))
 
     }
 
-    val validRecipient: Boolean = (OUTPUTS(0).propositionBytes == buyerPropBytes)
+    val validMinerFee: Boolean = (minerFeeOUT.value == _minerFee)
 
     allOf(Coll(
       validNFTIssuanceBox,
-      validRecipient
+      validMinerFee
     ))
 
   }
