@@ -76,6 +76,13 @@ class akkaFunctions {
 
   println("Service Runner Address: " + txHelper.senderAddress)
 
+  private val artistAddressConstant = 3
+  private val minerFeeConstant = 38
+  private val collectionTokenConstant = 1
+  private val liliumFeeAddressConstant = 36
+  private val liliumFeeValueConstant = 35
+  private val priceOfNFTNanoErgConstant = 34
+
   private def issuerTxn(
       stateBox: InputBox,
       proxyInput: InputBox,
@@ -235,24 +242,22 @@ class akkaFunctions {
     val priceOfNFTNanoErg: Long =
       try {
         val priceOfNFTNanoErg = stateContract.getErgoTree
-          .constants(31)
+          .constants(priceOfNFTNanoErgConstant)
           .value
           .asInstanceOf[Long]
 
-        val minerFee = stateContract.getErgoTree
-          .constants(40)
-          .value
-          .asInstanceOf[Long]
-
-        val boxCreationFee = 1000000
-
-        val liliumFee = stateContract.getErgoTree
-          .constants(32)
-          .value
-          .asInstanceOf[Long]
-
-        
-
+//        val minerFee = stateContract.getErgoTree
+//          .constants(minerFeeConstant)
+//          .value
+//          .asInstanceOf[Long]
+//
+//        val boxCreationFee = 1000000
+//
+//        val liliumFee = stateContract.getErgoTree
+//          .constants(liliumFeeValueConstant)
+//          .value
+//          .asInstanceOf[Long]
+        priceOfNFTNanoErg
       } catch {
         case e: Exception => println("error with decoding NFT price"); return
       }
