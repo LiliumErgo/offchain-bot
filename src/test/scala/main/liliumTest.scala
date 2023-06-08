@@ -11,8 +11,7 @@ import org.ergoplatform.appkit.impl.InputBoxImpl
 import org.ergoplatform.appkit.{Address, ErgoContract, ErgoToken, ErgoValue}
 import special.collection.Coll
 import special.sigma.SigmaProp
-import testMint.akkaFunctions
-import utils.{BoxAPI, ContractCompile, MetadataTranscoder, explorerApi}
+import utils.{BoxAPI, ContractCompile, MetadataTranscoder, TransactionHelper, explorerApi}
 
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
@@ -57,7 +56,8 @@ object ApiTest extends App {
     "aa8d7c3b79cec7edc72c257458502d3689b047f2f3893ac6ae3ae5eec46ca5f3"
 
   val issuerContract = compilerObj.compileIssuerContract(
-    LiliumContracts.IssuerContract.contractScript
+    LiliumContracts.IssuerContract.contractScript,
+    1000000
   )
 
   val stateBoxInput = exp.getUnspentBoxFromMempool(stateBox)
@@ -303,8 +303,21 @@ object stateBoxConstantsTest extends App {
       serviceConf.minerFeeNanoErg
     )
 
+  private val txHelper =
+    new TransactionHelper(this.ctx, serviceConf.txOperatorMnemonic, serviceConf.txOperatorMnemonicPw)
+
+  println(
+    compiler
+      .compilePreMintIssuerContract(
+        LiliumContracts.PreMintIssuer.contractScript,
+        txHelper.senderAddress
+      )
+      .toAddress
+  )
+
   val issuerContract = compiler.compileIssuerContract(
-    LiliumContracts.IssuerContract.contractScript
+    LiliumContracts.IssuerContract.contractScript,
+    serviceConf.minerFeeNanoErg
   )
 
   val metadataTranscoder = new MetadataTranscoder
@@ -340,6 +353,7 @@ object stateBoxConstantsTest extends App {
   val liliumFeePercent = serviceConf.liliumFeePercent
   val minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg
   val minerFee = serviceConf.minerFeeNanoErg
+  val minBoxValue = 9999999
 
   val stateContract = compiler.compileStateContract(
     LiliumContracts.StateContract.contractScript,
@@ -353,7 +367,8 @@ object stateBoxConstantsTest extends App {
     liliumFeeAddress,
     liliumFeePercent,
     minTxOperatorFeeNanoErg,
-    minerFee
+    minerFee,
+    minBoxValue
   )
 
 //  val stateContract = Address
@@ -364,7 +379,7 @@ object stateBoxConstantsTest extends App {
 
   println(stateContract.toAddress.toString)
   var i = 0
-  for(c <- stateContract.getErgoTree.constants){
+  for (c <- stateContract.getErgoTree.constants) {
     println(i + ": " + c)
     i = i + 1
   }

@@ -8,7 +8,7 @@ import contracts.LiliumContracts
 import initilization.createCollection
 import mint.{Client, DefaultNodeInfo}
 import org.ergoplatform.appkit.Address
-import testMint.akkaFunctions
+
 import utils.{MetadataTranscoder, explorerApi}
 
 import scala.collection.mutable
@@ -63,7 +63,7 @@ object init extends App {
   val issuerTree = new IssuerHelpersAVL
 
   prepareAVL(
-    masterMeta.read("metadata.json"),
+    masterMeta.read("metadata_complex.json"),
     issuerTree,
     issuanceTree
   )
@@ -76,7 +76,7 @@ object init extends App {
     mutable.LinkedHashMap()
   private val collectionFromJson = collectionParser.read(collectionJsonFilePath)
 
-  collectionFromJson.royalty.foreach {item =>
+  collectionFromJson.royalty.foreach { item =>
     royaltyMap += (Address.create(item.address) -> item.amount.round.toInt)
   }
   private val encodedRoyalty =
@@ -98,6 +98,9 @@ object init extends App {
       LiliumContracts.SingletonIssuer.contractScript,
     singletonIssuanceContractString =
       LiliumContracts.SingletonIssuance.contractScript,
+    premintIssuerContractString = LiliumContracts.PreMintIssuer.contractScript,
+    whitelistIssuerContractString =
+      LiliumContracts.WhitelistIssuer.contractScript,
     artistAddress = dummyArist,
     encodedRoyalty = encodedRoyalty.toHex,
     royaltyBlakeHash = hashedRoyalty,
@@ -116,6 +119,11 @@ object init extends App {
     mintExpiryTimestamp = collectionFromJson.mintingExpiry,
     returnCollectionTokensToArtist =
       collectionFromJson.returnCollectionTokensToArtist,
+    whitelistAccepted = collectionFromJson.whitelistAccepted,
+    whitelistBypass = collectionFromJson.whitelistBypass,
+    premintAccepted = collectionFromJson.premintAccepted,
+    whitelistTokenAmount = collectionFromJson.whitelistTokenAmount,
+    premintTokenAmount = collectionFromJson.premintTokenAmount,
     socialMediaMap = convertToMutableMap(collectionFromJson.socialMedia),
     issuanceMetaDataMap = issuanceTree.getMap,
     issuerMetaDataMap = issuerTree.getMap,
@@ -123,7 +131,8 @@ object init extends App {
     liliumFeeAddress = Address.create(serviceConf.liliumFeeAddress),
     liliumFeePercent = serviceConf.liliumFeePercent,
     minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg,
-    minerFee = serviceConf.minerFeeNanoErg
+    minerFee = serviceConf.minerFeeNanoErg,
+    minBoxValue = serviceConf.minBoxValueNanoErg
   )
 
 //  val oneMin = 60000
@@ -133,8 +142,3 @@ object init extends App {
 //  val akka = new akkaFunctions(issuanceTree, issuerTree)
 //  akka.main()
 }
-
-//object runMintTest extends App {
-//  val akka = new akkaFunctions()
-//  akka.main()
-//}
