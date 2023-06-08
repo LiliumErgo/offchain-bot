@@ -27,7 +27,7 @@
    // _liliumFeeNum: Long
    // _liliumFeeDenom: Long
    // _minerFee: Long
-   // _minBoxVaue: Long
+   // _minBoxValue: Long
    // _txOperatorFee: Long
 
    // ===== Relevant Variables ===== //
@@ -140,18 +140,30 @@
 
                }
 
-               allOf(Coll(
-                  (stateBoxOUT.value == SELF.value), // transfer the box value
-                  (stateBoxOUT.propositionBytes == SELF.propositionBytes), // correct contract
-                  validTokens, // correct tokens
-                  (stateBoxOUT.R4[AvlTree].get.digest == SELF.R4[AvlTree].get.digest), // correct issuer avl tree
-                  (stateBoxOUT.R5[AvlTree].get.digest == SELF.R5[AvlTree].get.digest), // correct issuance avl tree
-                  (stateBoxOUT.R6[Long].get == index + 1L), // increment nft index
-                  (stateBoxOUT.R7[(Long, Long)].get == SELF.R7[(Long, Long)].get), // make sure start/end times are preserved
-                  (stateBoxOUT.R8[Coll[Boolean]].get == SELF.R8[Coll[Boolean]].get), // make sure sale settings are preserved
-                  (stateBoxOUT.R9[(Coll[Byte], Coll[Byte])].get == SELF.R9[(Coll[Byte], Coll[Byte])].get) // make sure the whitelist/premint tokens ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
-               ))
+               if(isLastSale){
 
+                  allOf(Coll(
+                     (stateBoxOUT.value == SELF.value), // transfer the box value
+                     (stateBoxOUT.propositionBytes == SELF.propositionBytes), // correct contract
+                     validTokens, // correct tokens
+                     (stateBoxOUT.R4[AvlTree].get.digest == SELF.R4[AvlTree].get.digest), // correct issuer avl tree
+                     (stateBoxOUT.R5[AvlTree].get.digest == SELF.R5[AvlTree].get.digest), // correct issuance avl tree
+                     (stateBoxOUT.R6[Long].get == index + 1L), // increment nft index
+                  ))
+
+               } else {
+                   allOf(Coll(
+                      (stateBoxOUT.value == SELF.value), // transfer the box value
+                      (stateBoxOUT.propositionBytes == SELF.propositionBytes), // correct contract
+                      validTokens, // correct tokens
+                      (stateBoxOUT.R4[AvlTree].get.digest == SELF.R4[AvlTree].get.digest), // correct issuer avl tree
+                      (stateBoxOUT.R5[AvlTree].get.digest == SELF.R5[AvlTree].get.digest), // correct issuance avl tree
+                      (stateBoxOUT.R6[Long].get == index + 1L), // increment nft index
+                      (stateBoxOUT.R7[(Long, Long)].get == SELF.R7[(Long, Long)].get), // make sure start/end times are preserved
+                      (stateBoxOUT.R8[Coll[Boolean]].get == SELF.R8[Coll[Boolean]].get), // make sure sale settings are preserved
+                      (stateBoxOUT.R9[(Coll[Byte], Coll[Byte])].get == SELF.R9[(Coll[Byte], Coll[Byte])].get) // make sure the whitelist/premint tokens ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
+                   ))
+               }
             }
 
             val validUserBox: Boolean = {
@@ -196,7 +208,7 @@
                   val hasWhitelistToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })
                   val hasPremintToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == premintTokenId})
 
-                  if (hasWhitelistToken) {
+                  if (hasWhitelistToken && whitelistBypass) {
 
                        val validWhitelistBypass: Boolean = {
 
