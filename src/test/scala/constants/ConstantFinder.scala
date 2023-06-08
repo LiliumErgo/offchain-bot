@@ -21,8 +21,10 @@ object ConstantFinder extends App {
     LiliumContracts.ProxyContract.contractScript,
     serviceConf.minerFeeNanoErg
   )
+  val minerFeeNanoErg = serviceConf.minerFeeNanoErg
   val issuerContract = compiler.compileIssuerContract(
-    LiliumContracts.IssuerContract.contractScript
+    LiliumContracts.IssuerContract.contractScript,
+    minerFeeNanoErg
   )
 
   private val collectionJsonFilePath = "collection.json"
@@ -51,9 +53,9 @@ object ConstantFinder extends App {
     1
   )
   val liliumFeeAddress = Address.create(serviceConf.liliumFeeAddress)
-  val minerFeeNanoErg = serviceConf.minerFeeNanoErg
   val priceOfNFTNanoErg = collectionFromJson.priceOfNFTNanoErg
   val liliumFeePercent = serviceConf.liliumFeePercent
+  val minBoxValue = serviceConf.minBoxValueNanoErg
 
   val stateContract = compiler.compileStateContract(
     LiliumContracts.StateContract.contractScript,
@@ -67,10 +69,12 @@ object ConstantFinder extends App {
     liliumFeeAddress,
     liliumFeePercent,
     serviceConf.minTxOperatorFeeNanoErg,
-    minerFeeNanoErg
+    minerFeeNanoErg,
+    minBoxValue
   )
 
   val potentialMinerFeeConstantList = mutable.ListBuffer[Int]()
+  val potentialMinBoxValueConstantList = mutable.ListBuffer[Int]()
   val potentialCollectionTokenConstantList = mutable.ListBuffer[Int]()
   val potentialPriceOfNFTConstantList = mutable.ListBuffer[Int]()
   val potentialLiliumFeeNumConstantList = mutable.ListBuffer[Int]()
@@ -82,6 +86,8 @@ object ConstantFinder extends App {
       case value: Long =>
         if (value == minerFeeNanoErg) {
           potentialMinerFeeConstantList += i
+        } else if (value == (minBoxValue + minerFeeNanoErg)) {
+          potentialMinBoxValueConstantList += i
         } else if (value == priceOfNFTNanoErg) {
           potentialPriceOfNFTConstantList += i
         } else if (
@@ -111,10 +117,29 @@ object ConstantFinder extends App {
     }
   }
 
-  println("Potential Miner Fee Constant " + potentialMinerFeeConstantList.mkString(", "))
-  println("Potential Collection Token Constant: " + potentialCollectionTokenConstantList.mkString(", "))
-  println("Potential Price of NFT Constant: " + potentialPriceOfNFTConstantList.mkString(", "))
-  println("Potential Lilium Fee Numerator Constant: " + potentialLiliumFeeNumConstantList.mkString(", "))
+  println(
+    "Potential Miner Fee Constant: " + potentialMinerFeeConstantList.mkString(
+      ", "
+    )
+  )
+  println(
+    "Potential Min Box Value Constant: " + potentialMinBoxValueConstantList
+      .mkString(
+        ", "
+      )
+  )
+  println(
+    "Potential Collection Token Constant: " + potentialCollectionTokenConstantList
+      .mkString(", ")
+  )
+  println(
+    "Potential Price of NFT Constant: " + potentialPriceOfNFTConstantList
+      .mkString(", ")
+  )
+  println(
+    "Potential Lilium Fee Numerator Constant: " + potentialLiliumFeeNumConstantList
+      .mkString(", ")
+  )
   println("Artist Address Constant: " + artistAddressConstant)
   println("Lilium Fee Address Constant: " + liliumFeeAddressConstant)
 }

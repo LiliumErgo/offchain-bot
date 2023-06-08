@@ -25,6 +25,7 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
   val liliumFeePercent: Long = 5
   val minTxOperatorFeeNanoErg: Long = 1000000
   val minerFeeNanoErg: Long = 1600000
+  val minBoxValueNanoErg = 1000000
   val nodeUrl: String = "http://168.138.185.215:9052"
   val apiUrl: String = "https://tn-ergo-explorer.anetabtc.io"
   val dataBaseKey: String = ""
@@ -48,12 +49,13 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
     1
   )
 
-  val artistAddressConstant = 3
-  val minerFeeConstant = 38
-  val collectionTokenConstant = 1
-  val liliumFeeAddressConstant = 36
-  val liliumFeeValueConstant = 35
-  val priceOfNFTNanoErgConstant = 34
+  val artistAddressConstant = 6
+  val minerFeeConstant = 48
+  val minBoxValueConstant = 26
+  val collectionTokenConstant = 3
+  val liliumFeeAddressConstant = 46
+  val liliumFeeValueConstant = 45
+  val priceOfNFTNanoErgConstant = 39
 
   private val client: Client = new Client()
   client.setClient
@@ -68,6 +70,7 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
     liliumFeePercent,
     minTxOperatorFeeNanoErg,
     minerFeeNanoErg,
+    minBoxValueNanoErg,
     nodeUrl,
     apiUrl,
     dataBaseKey,
@@ -83,7 +86,8 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
     )
 
   val issuerContract: ErgoContract = compiler.compileIssuerContract(
-    LiliumContracts.IssuerContract.contractScript
+    LiliumContracts.IssuerContract.contractScript,
+    serviceConf.minerFeeNanoErg
   )
 
   val metadataTranscoder = new MetadataTranscoder
@@ -108,6 +112,7 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
 
   val priceOfNFTNanoErg: Long = 5000000
   val liliumFeeAddress: Address = Address.create(serviceConf.liliumFeeAddress)
+  val minBoxValue: Long = serviceConf.minBoxValueNanoErg
 
   val stateContract: ErgoContract = compiler.compileStateContract(
     LiliumContracts.StateContract.contractScript,
@@ -121,7 +126,8 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
     liliumFeeAddress,
     liliumFeePercent,
     minTxOperatorFeeNanoErg,
-    minerFeeNanoErg
+    minerFeeNanoErg,
+    minBoxValue
   )
 
   "Miner Fee constant" should "match" in {
@@ -131,6 +137,16 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
       .value
 
     minerFeeNanoErg should be(minerFeeDecoded)
+  }
+
+  "Min Box Value constant" should "match" in {
+
+    val sumOfMinerFeeAndMinBoxValue: SType#WrappedType =
+      stateContract.getErgoTree
+        .constants(minBoxValueConstant)
+        .value
+
+    sumOfMinerFeeAndMinBoxValue should be(minerFeeNanoErg + minBoxValueNanoErg)
   }
 
   "Collection Token constant" should "match" in {
