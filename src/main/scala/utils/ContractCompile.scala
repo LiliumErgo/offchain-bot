@@ -1,7 +1,6 @@
 package utils
 
 import org.ergoplatform.appkit._
-import scorex.crypto.hash
 
 class ContractCompile(ctx: BlockchainContext) {
 
@@ -59,6 +58,32 @@ class ContractCompile(ctx: BlockchainContext) {
     )
   }
 
+  def compileWhitelistIssuerContract(
+      contract: String,
+      operator: Address
+  ): ErgoContract = {
+    this.ctx.compileContract(
+      ConstantsBuilder
+        .create()
+        .item("_TxOperatorPK", operator.getPublicKey)
+        .build(),
+      contract
+    )
+  }
+
+  def compilePreMintIssuerContract(
+      contract: String,
+      operator: Address
+  ): ErgoContract = {
+    this.ctx.compileContract(
+      ConstantsBuilder
+        .create()
+        .item("_TxOperatorPK", operator.getPublicKey)
+        .build(),
+      contract
+    )
+  }
+
   def compileProxyContract(
       contract: String,
       minerFee: Long
@@ -84,7 +109,8 @@ class ContractCompile(ctx: BlockchainContext) {
       liliumFeeAddress: Address,
       liliumFeePercent: Long,
       minTxOperatorFeeNanoErg: Long,
-      minerFee: Long
+      minerFee: Long,
+      minBoxValue: Long
   ): ErgoContract = {
     this.ctx.compileContract(
       ConstantsBuilder
@@ -107,15 +133,17 @@ class ContractCompile(ctx: BlockchainContext) {
         .item("_liliumFeeDenom", 100)
         .item("_txOperatorFee", minTxOperatorFeeNanoErg)
         .item("_minerFee", minerFee)
+        .item("_minBoxValue", minBoxValue)
         .build(),
       contract
     )
   }
 
-  def compileIssuerContract(contract: String): ErgoContract = {
+  def compileIssuerContract(contract: String, minerFee: Long): ErgoContract = {
     this.ctx.compileContract(
       ConstantsBuilder
         .create()
+        .item("_minerFee", minerFee)
         .build(),
       contract
     )
