@@ -3,35 +3,20 @@ package mint
 import AVL.IssuerBox.{IssuerHelpersAVL, IssuerValue}
 import AVL.NFT.{IndexKey, IssuanceAVLHelpers, IssuanceValueAVL}
 import AVL.utils.avlUtils
-import configs.{
-  AvlJson,
-  Data,
-  collectionParser,
-  conf,
-  masterMeta,
-  serviceOwnerConf
-}
-
-import java.util.{Map => JMap}
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-import initilization.createCollection
-import org.ergoplatform.ErgoBox
-import org.ergoplatform.appkit.impl.InputBoxImpl
+import configs.serviceOwnerConf
 import org.ergoplatform.appkit.{
   Address,
-  BlockchainContext,
   ErgoToken,
   ErgoValue,
   InputBox,
-  SigmaProp,
   SignedTransaction
 }
 import org.ergoplatform.explorer.client.model.OutputInfo
 import special.collection.Coll
 import contracts.LiliumContracts
 import io.getblok.getblok_plasma.PlasmaParameters
-import io.getblok.getblok_plasma.collections.{PlasmaMap, Proof, ProvenResult}
+import io.getblok.getblok_plasma.collections.PlasmaMap
+import org.ergoplatform.ErgoBox
 import sigmastate.AvlTreeFlags
 import utils.{
   BoxAPI,
@@ -39,18 +24,11 @@ import utils.{
   ContractCompile,
   DatabaseAPI,
   LiliumEntry,
-  MetadataTranscoder,
-  NodeBoxJson,
   TransactionHelper,
-  explorerApi,
-  fileOperations
+  explorerApi
 }
 
 import java.util
-import scala.collection.JavaConverters._
-import scala.collection.convert.ImplicitConversions.`collection asJava`
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable
 
 class akkaFunctions {
 
@@ -63,7 +41,8 @@ class akkaFunctions {
   private lazy val serviceConf = serviceOwnerConf.read(serviceFilePath)
   private val issuerContract =
     compiler.compileIssuerContract(
-      LiliumContracts.IssuerContract.contractScript
+      LiliumContracts.IssuerContract.contractScript,
+      serviceConf.minerFeeNanoErg
     )
 
   private val exp = new explorerApi(
@@ -76,12 +55,13 @@ class akkaFunctions {
 
   println("Service Runner Address: " + txHelper.senderAddress)
 
-  private val artistAddressConstant = 3
-  private val minerFeeConstant = 38
-  private val collectionTokenConstant = 1
-  private val liliumFeeAddressConstant = 36
-  private val liliumFeeValueConstant = 35
-  private val priceOfNFTNanoErgConstant = 34
+  private val artistAddressConstant = 6
+  private val minerFeeConstant = 48
+  private val minerFeeAndMinBoxValueSumConstant = 26
+  private val collectionTokenConstant = 3
+  private val liliumFeeAddressConstant = 46
+  private val liliumFeeValueConstant = 45
+  private val priceOfNFTNanoErgConstant = 39
 
   private def issuerTxn(
       stateBox: InputBox,
@@ -241,35 +221,79 @@ class akkaFunctions {
 
     val priceOfNFTNanoErg: Long =
       try {
-        val priceOfNFTNanoErg = stateContract.getErgoTree
+        stateContract.getErgoTree
           .constants(priceOfNFTNanoErgConstant)
           .value
           .asInstanceOf[Long]
-
-//        val minerFee = stateContract.getErgoTree
-//          .constants(minerFeeConstant)
-//          .value
-//          .asInstanceOf[Long]
-//
-//        val boxCreationFee = 1000000
-//
-//        val liliumFee = stateContract.getErgoTree
-//          .constants(liliumFeeValueConstant)
-//          .value
-//          .asInstanceOf[Long]
-        priceOfNFTNanoErg
       } catch {
         case e: Exception => println("error with decoding NFT price"); return
       }
 
-//    val priceOfNFTNanoErg: Long = 2000000
+    val minerFee = {
+      try {
+        stateContract.getErgoTree
+          .constants(minerFeeConstant)
+          .value
+          .asInstanceOf[Long]
+      } catch {
+        case e: Exception => println("error with decoding miner fee"); return
+      }
+    }
 
-    val stateBoxTimeStamp = exp
-      .getErgoBoxfromID(stateBox.getBoxId)
-      .additionalRegisters(ErgoBox.R7)
-      .value
-      .asInstanceOf[(Long, Long)]
-      ._1
+    val liliumFee = {
+      try {
+        stateContract.getErgoTree
+          .constants(liliumFeeValueConstant)
+          .value
+          .asInstanceOf[Long]
+      } catch {
+        case e: Exception => println("error with decoding lilium fee"); return
+      }
+    }
+
+//    val priceOfNFTNanoErg: Long = 100000000
+//    val minerFee = 1600000
+//    val liliumFee = 5000000
+    val boxCreationFee = 1000000
+    val txOperatorFee = serviceConf.minTxOperatorFeeNanoErg
+
+    val stateBoxFromApi = exp.getErgoBoxfromID(stateBox.getBoxId)
+
+    val stateBoxTimeStamp = {
+      try {
+        stateBoxFromApi
+          .additionalRegisters(ErgoBox.R7)
+          .value
+          .asInstanceOf[(Long, Long)]
+          ._1
+      } catch {
+        case e: Exception => println("error with timestamp"); return
+      }
+    }
+    val stateBoxBooleans = {
+      try {
+        stateBoxFromApi
+          .additionalRegisters(ErgoBox.R8)
+          .value
+          .asInstanceOf[Coll[Boolean]]
+          .toArray
+      } catch {
+        case e: Exception =>
+          println("error with getting statebox booleans"); return
+      }
+    }
+
+    val tokenTuple = {
+      try {
+        stateBoxFromApi
+          .additionalRegisters(ErgoBox.R9)
+          .value
+          .asInstanceOf[(Coll[Byte], Coll[Byte])]
+      } catch {
+        case e: Exception =>
+          println("error with getting statebox token tuple"); return
+      }
+    }
 
     val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
 
@@ -279,7 +303,10 @@ class akkaFunctions {
           box,
           singletonTokenId,
           priceOfNFTNanoErg,
-          stateBoxTimeStamp
+          boxCreationFee + minerFee + liliumFee + minerFee + txOperatorFee,
+          stateBoxTimeStamp,
+          stateBoxBooleans,
+          tokenTuple
         )
       )
       .map(boxAPIObj.convertJsonBoxToErgoBox)
@@ -326,11 +353,47 @@ class akkaFunctions {
   def validateProxyBox(
       box: BoxJson,
       singleton: String,
+      priceOfNFTNanoErg: Long,
       value: Long,
-      timeStamp: Long
+      timeStamp: Long,
+      stateBoxBooleans: Array[Boolean],
+      tokenTuple: (Coll[Byte], Coll[Byte])
   ): Boolean = {
-    box.additionalRegisters.R4 != null && box.additionalRegisters.R5.serializedValue == singleton && box.value >= value && timeStamp < System
-      .currentTimeMillis()
+
+    def hasToken(box: BoxJson, tokenId: String): Boolean =
+      box.assets.exists(a => a.tokenId == tokenId)
+
+    // This method updates the value based on different conditions.
+    def updatedValue(
+        value: Long,
+        whitelistAccepted: Boolean,
+        hasWhitelistToken: Boolean
+    ): Long = {
+      if (whitelistAccepted && hasWhitelistToken) value + 1000000L
+      else value + priceOfNFTNanoErg
+    }
+
+    try {
+      val (whitelistAccepted, whitelistBypass, premintAccepted) =
+        (stateBoxBooleans(1), stateBoxBooleans(2), stateBoxBooleans(3))
+      val (whitelistToken, premintToken) = (
+        new ErgoToken(tokenTuple._1.toArray, 1),
+        new ErgoToken(tokenTuple._2.toArray, 1)
+      )
+      val hasWhitelistToken = hasToken(box, whitelistToken.getId.toString)
+      val hasPremintToken = hasToken(box, premintToken.getId.toString)
+      val bypass =
+        (whitelistAccepted && whitelistBypass && hasWhitelistToken) || (premintAccepted && hasPremintToken)
+      val allowedMinValue =
+        updatedValue(value, whitelistAccepted, hasWhitelistToken)
+
+      box.additionalRegisters.R4 != null &&
+      box.additionalRegisters.R5.serializedValue == singleton &&
+      box.value >= allowedMinValue &&
+      (timeStamp < System.currentTimeMillis() || bypass)
+    } catch {
+      case _: Exception => false
+    }
   }
 
 }
