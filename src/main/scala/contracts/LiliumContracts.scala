@@ -60,6 +60,8 @@ object LiliumContracts extends Enum[LiliumContracts] {
   case object CollectionIssuance extends NFTBoxGuardScriptContract
   case object SingletonIssuer extends NFTBoxGuardScriptContract
   case object SingletonIssuance extends NFTBoxGuardScriptContract
+  case object WhitelistIssuer extends NFTBoxGuardScriptContract
+  case object PreMintIssuer extends NFTBoxGuardScriptContract
   case object AVLdebug extends NFTBoxGuardScriptContract
   case object ProxyContract extends ProxyContractBoxGuardScriptContract
 }
