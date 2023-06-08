@@ -1,19 +1,12 @@
 package utils
 
-import AVL.Debug.AVLDebug
 import AVL.IssuerBox.IssuerValue
-import AVL.NFT.{IndexKey, IssuanceAVLHelpers, IssuanceValueAVL}
-import AVL.Debug.AVLDebug
+import AVL.NFT.{IndexKey, IssuanceValueAVL}
 import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap}
-import json.Register.Register
-import org.ergoplatform.{ErgoBox, appkit}
-import org.ergoplatform.appkit.JavaHelpers.JLongRType
 import org.ergoplatform.appkit.impl.{Eip4TokenBuilder, ErgoTreeContract}
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import special.collection.Coll
-
-import java.nio.charset.StandardCharsets
+import sigmastate.eval.Colls
 import java.util
 import scala.collection.mutable.ListBuffer
 
@@ -24,27 +17,6 @@ class OutBoxes(ctx: BlockchainContext) {
   }
   private val txBuilder = this.ctx.newTxBuilder()
   private val minAmount = this.getAmount(0.001)
-
-  def pictureNFTHelper(
-      inputBox: InputBox,
-      name: String,
-      description: String,
-      imageLink: String,
-      sha256: Array[Byte]
-  ): Eip4Token = {
-    val tokenID = inputBox.getId.toString
-    Eip4TokenBuilder.buildNftPictureToken(
-      tokenID,
-      1,
-      name,
-      description,
-      0,
-      sha256,
-      imageLink
-    )
-
-  }
-
   def tokenHelper(
       inputBox: InputBox,
       name: String,
@@ -69,33 +41,13 @@ class OutBoxes(ctx: BlockchainContext) {
       tokenDecimals: Int
   ): Eip4Token = {
 
-    Eip4TokenBuilder.buildNftPictureToken(
+    Eip4TokenBuilder.buildNftArtworkCollectionToken(
       inputBox.getId.toString,
       tokenAmount,
       name,
       description,
-      tokenDecimals,
-      Array(0.toByte),
-      "link"
+      tokenDecimals
     )
-  }
-
-  def NFToutBox(
-      nft: Eip4Token,
-      receiver: Address,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .mintToken(nft)
-      .contract(
-        new ErgoTreeContract(
-          receiver.getErgoAddress.script,
-          this.ctx.getNetworkType
-        )
-      )
-      .build()
   }
 
   def tokenOutBox(
@@ -192,40 +144,6 @@ class OutBoxes(ctx: BlockchainContext) {
       .build()
   }
 
-  def initErgoSapiensContract(
-      contract: ErgoContract,
-      metaDataMap: String,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .registers(
-        ErgoValue.fromHex(metaDataMap),
-        ErgoValue.of(0L)
-      )
-      .contract(contract)
-      .build()
-  }
-
-  def buyerNFTOutBox(
-      nft: Eip4Token,
-      receiver: Address,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .mintToken(nft)
-      .contract(
-        new ErgoTreeContract(
-          receiver.getErgoAddress.script,
-          this.ctx.getNetworkType
-        )
-      )
-      .build()
-  }
-
   def payoutBox(
       receiver: Address,
       amount: Double = 0.001
@@ -242,76 +160,6 @@ class OutBoxes(ctx: BlockchainContext) {
       .build()
   }
 
-  def newErgoSapiensContractBox(
-      contract: ErgoContract,
-      metaDataMap: String,
-      index: Long,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .registers(
-        ErgoValue.fromHex(metaDataMap),
-        ErgoValue.of(index)
-      )
-      .contract(contract)
-      .build()
-  }
-
-  def AVLDebugBox(
-      contract: ErgoContract,
-      metaDataMap: LocalPlasmaMap[IndexKey, AVLDebug],
-      index: Long,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .registers(
-        metaDataMap.ergoValue,
-        ErgoValue.of(index)
-      )
-      .contract(contract)
-      .build()
-  }
-
-  def AVLDebugBoxSpending(
-      senderAddress: Address,
-      description: String,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .registers(ErgoValue.of(description.getBytes(StandardCharsets.UTF_8)))
-      .contract(
-        new ErgoTreeContract(
-          senderAddress.getErgoAddress.script,
-          this.ctx.getNetworkType
-        )
-      )
-      .build()
-  }
-
-  def newIssuerBox(
-      royalty: Long,
-      senderAddress: Address,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .contract(
-        new ErgoTreeContract(
-          senderAddress.getErgoAddress.script,
-          this.ctx.getNetworkType
-        )
-      )
-      .registers(ErgoValue.of(royalty * 10))
-      .build()
-  }
-
   def genericContractBox(
       contract: ErgoContract,
       amount: Double = 0.001
@@ -321,6 +169,27 @@ class OutBoxes(ctx: BlockchainContext) {
       .value(getAmount(amount))
       .contract(contract)
       .build()
+  }
+
+  def whiteListIssuerBox(
+      contract: ErgoContract,
+      tokenAmount: Long,
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .registers(ErgoValue.of(tokenAmount))
+      .contract(contract)
+      .build()
+  }
+
+  def preMintIssuerBox(
+      contract: ErgoContract,
+      tokenAmount: Long,
+      amount: Double = 0.001
+  ): OutBox = {
+    whiteListIssuerBox(contract, tokenAmount, amount)
   }
 
   def initNFTCollection(
@@ -360,9 +229,26 @@ class OutBoxes(ctx: BlockchainContext) {
       index: Long,
       startingTime: Long,
       expiryTime: Long,
-      returnCollectionTokensToArtist: Boolean,
+      r8BooleanArr: Array[Boolean],
+      preMintToken: ErgoToken,
+      whitelistToken: ErgoToken,
       amount: Double = 0.001
   ): OutBox = {
+
+    val r9 = {
+      var preMintTokenBytes: Array[Byte] = Array()
+      var whiteListTokenBytes: Array[Byte] = Array()
+
+      if (preMintToken != null) {
+        preMintTokenBytes = preMintToken.getId.getBytes
+      }
+      if (whitelistToken != null) {
+        whiteListTokenBytes = whitelistToken.getId.getBytes
+      }
+
+      (Colls.fromArray(whiteListTokenBytes), Colls.fromArray(preMintTokenBytes))
+    }
+
     this.txBuilder
       .outBoxBuilder()
       .value(getAmount(amount))
@@ -373,7 +259,8 @@ class OutBoxes(ctx: BlockchainContext) {
         ErgoValueBuilder.buildFor(
           (startingTime, expiryTime)
         ),
-        ErgoValue.of(returnCollectionTokensToArtist)
+        ErgoValueBuilder.buildFor(Colls.fromArray(r8BooleanArr)),
+        ErgoValueBuilder.buildFor(r9)
       )
       .tokens(singletonToken, collectionToken)
       .contract(contract)
@@ -389,9 +276,26 @@ class OutBoxes(ctx: BlockchainContext) {
       index: Long,
       startingTime: Long,
       expiryTime: Long,
-      returnCollectionTokensToArtist: Boolean,
+      r8BooleanArr: Array[Boolean],
+      preMintToken: ErgoToken,
+      whitelistToken: ErgoToken,
       amount: Double = 0.001
   ): OutBox = {
+
+    val r9 = {
+      var preMintTokenBytes: Array[Byte] = Array()
+      var whiteListTokenBytes: Array[Byte] = Array()
+
+      if (preMintToken != null) {
+        preMintTokenBytes = preMintToken.getId.getBytes
+      }
+      if (whitelistToken != null) {
+        whiteListTokenBytes = whitelistToken.getId.getBytes
+      }
+
+      (Colls.fromArray(whiteListTokenBytes), Colls.fromArray(preMintTokenBytes))
+    }
+
     this.txBuilder
       .outBoxBuilder()
       .value(getAmount(amount))
@@ -402,7 +306,8 @@ class OutBoxes(ctx: BlockchainContext) {
         ErgoValueBuilder.buildFor(
           (startingTime, expiryTime)
         ),
-        ErgoValue.of(returnCollectionTokensToArtist)
+        ErgoValueBuilder.buildFor(Colls.fromArray(r8BooleanArr)),
+        ErgoValueBuilder.buildFor(r9)
       )
       .tokens(singletonToken, collectionToken)
       .contract(contract)
@@ -513,6 +418,24 @@ class OutBoxes(ctx: BlockchainContext) {
       .contract(
         new ErgoTreeContract(
           senderAddress.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .build()
+  }
+
+  def artistTokenPayoutBox(
+      token: ErgoToken,
+      artistAddress: Address,
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .tokens(token)
+      .contract(
+        new ErgoTreeContract(
+          artistAddress.getErgoAddress.script,
           this.ctx.getNetworkType
         )
       )
