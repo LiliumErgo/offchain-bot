@@ -86,6 +86,7 @@ case class ServiceOwnerConfig(
     liliumFeePercent: Long,
     minTxOperatorFeeNanoErg: Long,
     minerFeeNanoErg: Long,
+    minBoxValueNanoErg: Long,
     nodeUrl: String,
     apiUrl: String,
     dataBaseKey: String,
