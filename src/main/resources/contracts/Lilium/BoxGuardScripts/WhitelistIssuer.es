@@ -7,8 +7,6 @@
     // Auditor: mgpai22@github.com
 
     // ===== Compile Time Constants ===== //
-    // _WhitelistAmount: Long
-    // _UserPK: SigmaProp
     // _TxOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
@@ -18,8 +16,9 @@
 
         val validWhitelistIssuanceBox: Boolean = {
 
-            val validTokens: Boolean = (OUTPUTS(0).tokens(0) == (SELF.id, _WhitelistAmount))
-            val validUser: Boolean = (OUTPUTS(0).propositionBytes == _UserPK.propBytes)
+            val whitelistAmount = SELF.R4[Long].get
+            val validTokens: Boolean = (OUTPUTS(0).tokens(0) == (SELF.id, whitelistAmount))
+            val validUser: Boolean = (OUTPUTS(0).propositionBytes == INPUTS(0).propositionBytes) // who ever sent the funds gets the tokens
 
             allOf(Coll(
                 validTokens,
