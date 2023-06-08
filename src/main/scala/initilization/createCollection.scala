@@ -56,6 +56,8 @@ class createCollection(
     collectionIssuanceContractString: String,
     singletonIssuerContractString: String,
     singletonIssuanceContractString: String,
+    premintIssuerContractString: String,
+    whitelistIssuerContractString: String,
     artistAddress: Address,
     encodedRoyalty: String,
     royaltyBlakeHash: Array[Byte],
@@ -67,6 +69,11 @@ class createCollection(
     expiryTimestamp: Long,
     mintExpiryTimestamp: Long,
     returnCollectionTokensToArtist: Boolean,
+    whitelistAccepted: Boolean,
+    whitelistBypass: Boolean,
+    premintAccepted: Boolean,
+    whitelistTokenAmount: Long,
+    premintTokenAmount: Long,
     socialMediaMap: mutable.LinkedHashMap[String, String],
     issuanceMetaDataMap: PlasmaMap[IndexKey, IssuanceValueAVL],
     issuerMetaDataMap: PlasmaMap[IndexKey, IssuerValue],
@@ -74,7 +81,8 @@ class createCollection(
     liliumFeeAddress: Address,
     liliumFeePercent: Long,
     minTxOperatorFeeNanoErg: Long,
-    minerFee: Long
+    minerFee: Long,
+    minBoxValue: Long
 ) {
 
   def getERGUSD: Double = {
@@ -109,6 +117,7 @@ class createCollection(
   private val exp = new explorerApi(
     DefaultNodeInfo(ctx.getNetworkType).explorerUrl
   )
+  private val outBoxObj = new OutBoxes(this.ctx)
   private val metadataTranscoder = new MetadataTranscoder
   private val encoder = new metadataTranscoder.Encoder
   private val txHelper =
@@ -119,7 +128,7 @@ class createCollection(
     )
   private val compiler = new ContractCompile(ctx)
   private val issuerContract =
-    compiler.compileIssuerContract(issuerContractString)
+    compiler.compileIssuerContract(issuerContractString, minerFee)
 
   private val r4 = ErgoValue.of(1) //version of collection eip
   private val r5 =
@@ -138,6 +147,12 @@ class createCollection(
   )
   private val r8 = ErgoValueBuilder.buildFor(emptyAdditionalInfo)
   private val r9 = ErgoValue.of(collectionTokensAmount)
+
+  private var preMintToken: ErgoToken = new ErgoToken("", 1)
+  private var whitelistToken: ErgoToken = new ErgoToken("", 1)
+
+  preMintToken = null
+  whitelistToken = null
 
   private val collectionIssuerContract: ErgoContract =
     compiler.compileCollectionIssuerContract(
@@ -171,7 +186,75 @@ class createCollection(
 
   println("Genesis: " + txHelper.sendTx(genesisTX))
 
-  private val outBoxObj = new OutBoxes(this.ctx)
+  if (premintAccepted && premintTokenAmount != -1) {
+    val preMintContract = compiler.compilePreMintIssuerContract(
+      premintIssuerContractString,
+      txHelper.senderAddress
+    )
+
+    val preMintIssuerBox =
+      outBoxObj.preMintIssuerBox(preMintContract, premintTokenAmount, 0.002)
+
+    val preMintIssuerTxn = txHelper.signTransaction(
+      txHelper.buildUnsignedTransaction(inputBoxList, List(preMintIssuerBox))
+    )
+
+    inputBoxList.remove(0)
+    inputBoxList.add(preMintIssuerTxn.getOutputsToSpend.get(2))
+
+    val preMintTokenTx: SignedTransaction = txHelper.createToken(
+      artistAddress,
+      List(0.001),
+      List(preMintIssuerTxn.getOutputsToSpend.get(0)).asJava,
+      name = collectionName + " Premint Token",
+      description = "Allows mint for " + collectionName + " before public",
+      tokenAmount = premintTokenAmount,
+      tokenDecimals = 0
+    )
+
+    preMintToken = preMintTokenTx.getOutputsToSpend.get(0).getTokens.get(0)
+
+    println("Premint Issuer Tx: " + txHelper.sendTx(preMintIssuerTxn))
+    println("Premint Token Mint Tx: " + txHelper.sendTx(preMintTokenTx))
+
+  }
+
+  if (whitelistAccepted && whitelistTokenAmount != -1) {
+    val whitelistContract = compiler.compileWhitelistIssuerContract(
+      whitelistIssuerContractString,
+      txHelper.senderAddress
+    )
+
+    val whitelistIssuerBox =
+      outBoxObj.whiteListIssuerBox(
+        whitelistContract,
+        whitelistTokenAmount,
+        0.002
+      )
+
+    val whitelistIssuerTxn = txHelper.signTransaction(
+      txHelper.buildUnsignedTransaction(inputBoxList, List(whitelistIssuerBox))
+    )
+
+    inputBoxList.remove(0)
+    inputBoxList.add(whitelistIssuerTxn.getOutputsToSpend.get(2))
+
+    val whitelistTokenTx: SignedTransaction = txHelper.createToken(
+      artistAddress,
+      List(0.001),
+      List(whitelistIssuerTxn.getOutputsToSpend.get(0)).asJava,
+      name = collectionName + " Whitelist Token",
+      description = "Allows free mint for " + collectionName,
+      tokenAmount = whitelistTokenAmount,
+      tokenDecimals = 0
+    )
+
+    whitelistToken = whitelistTokenTx.getOutputsToSpend.get(0).getTokens.get(0)
+
+    println("Whitelist Issuer Tx: " + txHelper.sendTx(whitelistIssuerTxn))
+    println("Whitelist Token Mint Tx: " + txHelper.sendTx(whitelistTokenTx))
+
+  }
 
   private val singletonIssuerBox =
     outBoxObj.genericContractBox(singletonIssuerContract, 0.002)
@@ -238,7 +321,8 @@ class createCollection(
     liliumFeeAddress,
     liliumFeePercent,
     minTxOperatorFeeNanoErg,
-    minerFee
+    minerFee,
+    minBoxValue
   )
 
   private val singletonTokenTx: SignedTransaction = txHelper.createToken(
@@ -306,7 +390,14 @@ class createCollection(
     0,
     startingTimestamp,
     expiryTimestamp,
-    returnCollectionTokensToArtist,
+    Array(
+      returnCollectionTokensToArtist,
+      whitelistAccepted,
+      whitelistBypass,
+      premintAccepted
+    ),
+    preMintToken,
+    whitelistToken,
     0.001 + convertERGLongToDouble(minerFee) + convertERGLongToDouble(
       minTxOperatorFeeNanoErg
     )
