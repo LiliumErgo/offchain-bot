@@ -9,14 +9,15 @@
 
 
     // ===== Compile Time Constants ===== //
+    // _usePool: Boolean
+    // _singletonIssuanceContractBytes
     // _TxOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
-   val SingletonIssuanceContractBytes: Coll[Byte] = getVar[Coll[Byte]](0).get
+    // None
 
-
-   val nftBox = OUTPUTS(0).tokens(0) == (SELF.id, 1L)
-   val properOutput = OUTPUTS(0).propositionBytes == SingletonIssuanceContractBytes
+   val nftBox = if (usePool) (OUTPUTS(0).tokens(0) == (SELF.id, 2L)) else (OUTPUTS(0).tokens(0) == (SELF.id, 1L))
+   val properOutput = OUTPUTS(0).propositionBytes == _singletonIssuanceContractBytes
 
    sigmaProp(nftBox && properOutput) && _TxOperatorPK
 

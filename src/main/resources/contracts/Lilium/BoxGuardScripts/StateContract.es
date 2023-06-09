@@ -16,7 +16,7 @@
    // R5: AvlTree => Issuer Box AVL
    // R6: Long => Index
    // R7: (Long, Long) => Sale Starting and Ending Timestamps
-   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted, paymentTokenAccepted)
+   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted, paymentTokenAccepted, usePool)
    // R9: Coll[Coll[Byte]]=> Coll(WhitelistTokenId, PreMintTokenId, PaymentTokenId)
 
    // ===== Compile Time Constants ===== //
@@ -27,6 +27,7 @@
    // _collectionToken: Coll[Byte]
    // _singletonToken: Coll[Byte]
    // _priceOfNFT: Long
+   // _paymentTokenAmount: Long
    // _liliumSigmaProp: SigmaProp
    // _liliumFeeNum: Long
    // _liliumFeeDenom: Long
@@ -43,6 +44,7 @@
    val whitelistBypass: Boolean        = SELF.R8[Coll[Boolean]].get(2)
    val premintAccepted: Boolean        = SELF.R8[Coll[Boolean]].get(3)
    val paymentTokenAccepted: Boolean   = SELF.R8[Coll[Boolean]].get(4)
+   val usePool: Boolean                = SELF.R8[Coll[Boolean]].get(5)
    val whitelistTokenId: Coll[Byte]    = SELF.R9[Coll[Coll[Byte]]].get(0)
    val premintTokenId: Coll[Byte]      = SELF.R9[Coll[Coll[Byte]]].get(1)
    val paymentTokenId: Coll[Byte]      = SELF.R9[Coll[Coll[Byte]]].get(2)
@@ -68,11 +70,13 @@
 
             // inputs
             val buyerProxyBox: Box = INPUTS(1)
-
+            val buyerPaymentTokenFilter: Coll[(Coll[Byte], Long)] = buyerProxyBox.tokens.filter({ (t: (Coll[Byte], Long)) => t._1 == paymentTokenId })
+            val hasPaymentToken: Boolean = (buyerPaymentTokenFilter.size == 1)
+            
             // outputs
             val issuerBoxOUT: Box = OUTPUTS(0)
             val stateBoxOUT: Box = OUTPUTS(1) // Output which recreates self
-            val userBoxOUT: Box = OUTPUTS(2) // Output which goes to artist
+            val userBoxOUT: Box = OUTPUTS(2)  // Output which goes to artist
             val liliumBoxOUT: Box = OUTPUTS(3)
             val minerBoxOUT: Box = OUTPUTS(4)
             val txOperatorBoxOUT: Box = OUTPUTS(5)
@@ -181,7 +185,7 @@
 
                   val hasWhitelistToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })
 
-                  if (whitelistAccepted && hasWhitelistToken) {
+                  if (whitelistAccepted && hasWhitelistToken && usePool) {
 
                      val validWhitelistSale: Boolean = {
 
@@ -200,11 +204,11 @@
 
                      val validNormalSale: Boolean = {
 
-                        if (paymentTokenAccepted) {
+                        if (paymentTokenAccepted && hasPaymentToken && usePool) {
 
                            allOf(Coll(
                               (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes),
-                              (userBoxOUT.tokens(0) == (paymentTokenId, _priceOfNFT))                              
+                              (userBoxOUT.tokens(0) == (paymentTokenId, _paymentTokenAmount))                              
                            ))
 
                         } else {
@@ -227,7 +231,7 @@
                   val hasWhitelistToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })
                   val hasPremintToken: Boolean = buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == premintTokenId})
 
-                  if (hasWhitelistToken && whitelistBypass) {
+                  if (hasWhitelistToken && whitelistBypass && usePool) {
 
                        val validWhitelistBypass: Boolean = {
 
@@ -246,11 +250,11 @@
 
                      val validPreMintSale: Boolean = {
 
-                        if (paymentTokenAccepted) {
+                        if (paymentTokenAccepted && hasPaymentToken && usePool) {
 
                            allOf(Coll(
                               (userBoxOUT.tokens(0) == (premintTokenId, 1L)),
-                              (userBoxOUT.tokens(1) == (paymentTokenId, _priceOfNFT)), 
+                              (userBoxOUT.tokens(1) == (paymentTokenId, _paymentTokenAmount)), 
                               (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
                            ))
 
@@ -298,8 +302,7 @@
                validUserBox,
                validLiliumBox,
                validMinerFee,
-               validTxOperatorFee,
-               (OUTPUTS.size == 6)
+               validTxOperatorFee
             ))
 
          }
@@ -350,8 +353,7 @@
             allOf(Coll(
                validUserBox,
                validMinerFee,
-               validTxOperatorFee,
-               (OUTPUTS.size == 3)
+               validTxOperatorFee
             ))
 
          }

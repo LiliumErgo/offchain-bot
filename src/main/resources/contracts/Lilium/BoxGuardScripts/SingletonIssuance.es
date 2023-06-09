@@ -13,13 +13,36 @@
 
     // ===== Compile Time Constants ===== //
     // _SingletonToken: Coll[Byte]
+    // _usePool: Boolean
+    // _singletonIssuanceContractBytes: Coll[Byte]
+    // _saleLPContractBytes: Coll[Byte]
     // _TxOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
-    val StateBoxContractBytes: Coll[Byte] = getVar[Coll[Byte]](0).get
+    // None
+   
+    val properOutput: Boolean = OUTPUTS(0).propositionBytes == _singletonIssuanceContractBytes
+    val properSaleLP: Boolean = if (usePool) OUTPUTS(1).propositionBytes == _saleLPContractBytes
+    val properTokenTransfer: Boolean = {
 
-    val properOutput = OUTPUTS(0).propositionBytes == StateBoxContractBytes
-    val properTokenTransfer = (OUTPUTS(0).tokens(0) == (_SingletonToken, 1L)) && (SELF.tokens(0)._1  == _SingletonToken)
+        if (usePool) {
+
+            allOf(Coll(
+                (OUTPUTS(0).tokens(0) == (_SingletonToken, 1L)), // state box
+                (OUTPUTS(1).tokens(0) == (_SingletonToken, 1L)), // sale lp box
+                (SELF.tokens(0)._1  == _SingletonToken)
+            ))
+
+        } else {
+
+            allOf(Coll(
+                (OUTPUTS(0).tokens(0) == (_SingletonToken, 1L)),
+                (SELF.tokens(0)._1  == _SingletonToken)
+            ))
+
+        } 
+
+    }
 
     sigmaProp(properOutput && properTokenTransfer) && _TxOperatorPK
 
