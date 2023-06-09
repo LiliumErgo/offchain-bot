@@ -7,13 +7,17 @@
    // Author: mgpai22@github.com
    // Auditor: lucagdangelo@github.com
 
-   // ===== Box Registers ===== //
+   // ===== Box Contents ===== //
+   // Tokens
+   // 1. (StateSingletonTokenId, 1)
+   // 2. (CollectionTokenId, CollectionTokenAmount)
+   // Registers
    // R4: AvlTree => Issuance Box AVL
    // R5: AvlTree => Issuer Box AVL
    // R6: Long => Index
    // R7: (Long, Long) => Sale Starting and Ending Timestamps
-   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted)
-   // R9: (Coll[Byte], Coll[Byte]) => (WhitelistTokenId, PreMintTokenId)
+   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted, paymentTokenAccepted)
+   // R9: Coll[Coll[Byte]]=> Coll(WhitelistTokenId, PreMintTokenId, PaymentTokenId)
 
    // ===== Compile Time Constants ===== //
    // _artistSigmaProp: SigmaProp
@@ -31,15 +35,17 @@
    // _txOperatorFee: Long
 
    // ===== Relevant Variables ===== //
-   val hasSaleStarted: Boolean = SELF.R7[(Long, Long)].get._1 <= CONTEXT.headers(0).timestamp
-   val hasSaleEnded: Boolean = SELF.R7[(Long, Long)].get._2 <= CONTEXT.headers(0).timestamp
-   val isInfiniteSale: Boolean = (SELF.R7[(Long, Long)].get._2 == -1L)
-   val isReturn: Boolean = SELF.R8[Coll[Boolean]].get(0)
-   val whitelistAccepted: Boolean = SELF.R8[Coll[Boolean]].get(1)
-   val whitelistBypass: Boolean = SELF.R8[Coll[Boolean]].get(2)
-   val premintAccepted: Boolean = SELF.R8[Coll[Boolean]].get(3)
-   val whitelistTokenId: Coll[Byte] = SELF.R9[(Coll[Byte], Coll[Byte])].get._1
-   val premintTokenId: Coll[Byte] = SELF.R9[(Coll[Byte], Coll[Byte])].get._2
+   val hasSaleStarted: Boolean         = SELF.R7[(Long, Long)].get._1 <= CONTEXT.headers(0).timestamp
+   val hasSaleEnded: Boolean           = SELF.R7[(Long, Long)].get._2 <= CONTEXT.headers(0).timestamp
+   val isInfiniteSale: Boolean         = (SELF.R7[(Long, Long)].get._2 == -1L)
+   val isReturn: Boolean               = SELF.R8[Coll[Boolean]].get(0)
+   val whitelistAccepted: Boolean      = SELF.R8[Coll[Boolean]].get(1)
+   val whitelistBypass: Boolean        = SELF.R8[Coll[Boolean]].get(2)
+   val premintAccepted: Boolean        = SELF.R8[Coll[Boolean]].get(3)
+   val paymentTokenAccepted: Boolean   = SELF.R8[Coll[Boolean]].get(4)
+   val whitelistTokenId: Coll[Byte]    = SELF.R9[Coll[Coll[Byte]]].get(0)
+   val premintTokenId: Coll[Byte]      = SELF.R9[Coll[Coll[Byte]]].get(1)
+   val paymentTokenId: Coll[Byte]      = SELF.R9[Coll[Coll[Byte]]].get(2)
 
    if (hasSaleStarted || premintAccepted || whitelistBypass) {
 
@@ -161,7 +167,7 @@
                       (stateBoxOUT.R6[Long].get == index + 1L), // increment nft index
                       (stateBoxOUT.R7[(Long, Long)].get == SELF.R7[(Long, Long)].get), // make sure start/end times are preserved
                       (stateBoxOUT.R8[Coll[Boolean]].get == SELF.R8[Coll[Boolean]].get), // make sure sale settings are preserved
-                      (stateBoxOUT.R9[(Coll[Byte], Coll[Byte])].get == SELF.R9[(Coll[Byte], Coll[Byte])].get) // make sure the whitelist/premint tokens ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
+                      (stateBoxOUT.R9[Coll[Coll[Byte]]].get == SELF.R9[Coll[Coll[Byte]]].get) // make sure the whitelist/premint tokens ids are preserved, these should be empty Coll[Byte] if there are no whitelist/premint tokens for the sale.
                    ))
                }
             }
@@ -182,7 +188,7 @@
                         // Note: Whitelisting does NOT bypass required Lilium Fee per mint
 
                         allOf(Coll(
-                           (userBoxOUT.tokens(0)._1 == whitelistTokenId),
+                           (userBoxOUT.tokens(0) == (whitelistTokenId, 1L)),
                            (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
                         ))
 
@@ -193,10 +199,23 @@
                   } else {
 
                      val validNormalSale: Boolean = {
-                        allOf(Coll(
-                           (userBoxOUT.value == _priceOfNFT),
-                           (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
-                        ))
+
+                        if (paymentTokenAccepted) {
+
+                           allOf(Coll(
+                              (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes),
+                              (userBoxOUT.tokens(0) == (paymentTokenId, _priceOfNFT))                              
+                           ))
+
+                        } else {
+
+                           allOf(Coll(
+                              (userBoxOUT.value == _priceOfNFT),
+                              (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                           ))
+
+                        }
+
                      }
 
                      validNormalSale
@@ -215,7 +234,7 @@
                           // Note: Whitelisting does NOT bypass required Lilium Fee per mint
 
                           allOf(Coll(
-                             (userBoxOUT.tokens(0)._1 == whitelistTokenId),
+                             (userBoxOUT.tokens(0) == (whitelistTokenId, 1L)),
                              (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
                           ))
 
@@ -227,11 +246,23 @@
 
                      val validPreMintSale: Boolean = {
 
-                        allOf(Coll(
-                           (userBoxOUT.value == _priceOfNFT),
-                           (userBoxOUT.tokens(0)._1 == premintTokenId),
-                           (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
-                        ))
+                        if (paymentTokenAccepted) {
+
+                           allOf(Coll(
+                              (userBoxOUT.tokens(0) == (premintTokenId, 1L)),
+                              (userBoxOUT.tokens(1) == (paymentTokenId, _priceOfNFT)), 
+                              (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                           ))
+
+                        } else {
+
+                           allOf(Coll(
+                              (userBoxOUT.value == _priceOfNFT),
+                              (userBoxOUT.tokens(0) == (premintTokenId, 1L)),
+                              (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes)
+                           ))
+
+                        }
 
                      }
 
@@ -276,58 +307,56 @@
          sigmaProp(validSaleTx)
 
       } else {
+         
+         // create box if sale has expired, do this by setting timestamp to like 5 minutes from now
+         val validReturnOrBurnTx: Boolean = {
 
-            // create box if sale has expired, do this by setting timestamp to like 5 minutes from now
-            val validReturnOrBurnTx: Boolean = {
+            // outputs
+            val userBoxOUT: Box = OUTPUTS(0)
+            val minerBoxOUT: Box = OUTPUTS(1)
+            val txOperatorBoxOUT: Box = OUTPUTS(2)
 
-               // outputs
-               val userBoxOUT: Box = OUTPUTS(0)
-               val minerBoxOUT: Box = OUTPUTS(1)
-               val txOperatorBoxOUT: Box = OUTPUTS(2)
+            val validUserBox: Boolean = {
 
-               val validUserBox: Boolean = {
+               val validTokenTransfer: Boolean = {
 
-                val validTokenTransfer: Boolean = {
+                  if (isReturn) {
 
-                    if (isReturn) {
+                     allOf(Coll(
+                        (userBoxOUT.tokens(0) == SELF.tokens(1)),
+                        (userBoxOUT.tokens(0)._1 == _collectionToken)
+                     ))
 
-                        allOf(Coll(
-                           (userBoxOUT.tokens(0) == SELF.tokens(1)),
-                           (userBoxOUT.tokens(0)._1 == _collectionToken)
-                        ))
+                  } else {
 
-                    } else {
-
-                     // maybe add condition here to ensure collection tokens get burned?
                      OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
 
-                    }
-
-                }
-
-                allOf(Coll(
-                    (userBoxOUT.value == SELF.value - _minerFee - _txOperatorFee), //state box should have more than 0.001, it should have 0.001 + minerFee + operatorFee
-                    (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes),
-                    validTokenTransfer
-                ))
+                  }
 
                }
 
-               val validMinerFee: Boolean = (minerBoxOUT.value == _minerFee)
-
-               val validTxOperatorFee: Boolean = (txOperatorBoxOUT.value >= _txOperatorFee)
-
                allOf(Coll(
-                  validUserBox,
-                  validMinerFee,
-                  validTxOperatorFee,
-                  (OUTPUTS.size == 3)
+                  (userBoxOUT.value == SELF.value - _minerFee - _txOperatorFee), // state box should have more than 0.001, it should have 0.001 + minerFee + operatorFee
+                  (userBoxOUT.propositionBytes == _artistSigmaProp.propBytes),
+                  validTokenTransfer
                ))
 
             }
 
-            sigmaProp(validReturnOrBurnTx)
+            val validMinerFee: Boolean = (minerBoxOUT.value == _minerFee)
 
+            val validTxOperatorFee: Boolean = (txOperatorBoxOUT.value >= _txOperatorFee)
+
+            allOf(Coll(
+               validUserBox,
+               validMinerFee,
+               validTxOperatorFee,
+               (OUTPUTS.size == 3)
+            ))
+
+         }
+
+         sigmaProp(validReturnOrBurnTx)
       }
 
    } else {

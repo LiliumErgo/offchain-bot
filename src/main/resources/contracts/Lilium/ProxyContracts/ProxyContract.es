@@ -5,7 +5,10 @@
     // Version: 1.0.0
     // Author: mgpai22@github.com
 
-    // ===== Box Registers ===== //
+    // ===== Box Contents ===== //
+    // Tokens
+    // 1. (PaymentToken | PreMintToken | WhitelistToken, PaymentTokenAmount | 1 | 1) // only present if the sale requires a custom token, premint token, or whitelist token
+    // Registers
     // R4: SigmaProp => Buyer SigmaProp
     // R5: Coll[Byte] => State Box Singleton
 
