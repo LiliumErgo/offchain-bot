@@ -19,10 +19,9 @@
   // _minerFee: Long
 
   // ===== Context Extension Variables ===== //
-  // None
+  val proof = getVar[Coll[Byte]](0).get
 
   // ===== Relevant Variables ===== //
-  val proof = getVar[Coll[Byte]](0).get
   val buyerSigmaProp: SigmaProp = SELF.R9[(SigmaProp, Long)].get._1
   val index: Long = SELF.R9[(SigmaProp, Long)].get._2
   val salesContractInput = CONTEXT.dataInputs(0) // ensure to check this is the legit stateContract with a singleton or something

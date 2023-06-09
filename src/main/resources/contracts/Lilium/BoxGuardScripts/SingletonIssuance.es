@@ -8,42 +8,44 @@
     // Author: mgpai22@github.com
     // Auditor: lucagdangelo@github.com
 
-    // ===== Box Registers ===== //
-    // Tokens: Singleton Token
+    // ===== Box Contents ===== //
+    // Tokens
+    // 1. (SingletonTokenId, 1 | 2)
 
     // ===== Compile Time Constants ===== //
-    // _SingletonToken: Coll[Byte]
+    // _singletonToken: Coll[Byte]
     // _usePool: Boolean
-    // _singletonIssuanceContractBytes: Coll[Byte]
-    // _saleLPContractBytes: Coll[Byte]
-    // _TxOperatorPK: SigmaProp
+    // _totalFees: Long
+    // _txOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
-    // None
+    val singletonIssuanceContractBytes: Coll[Byte] = getVar[Coll[Byte]](0).get
+    val saleLPContractBytes: Coll[Byte] = getVar[Coll[Byte]](1).get
    
-    val properOutput: Boolean = OUTPUTS(0).propositionBytes == _singletonIssuanceContractBytes
-    val properSaleLP: Boolean = if (usePool) OUTPUTS(1).propositionBytes == _saleLPContractBytes
+    val properOutput: Boolean = OUTPUTS(0).propositionBytes == singletonIssuanceContractBytes
+    val properSaleLP: Boolean = if (usePool) OUTPUTS(1).propositionBytes == saleLPContractBytes
     val properTokenTransfer: Boolean = {
 
-        if (usePool) {
+        if (_usePool) {
 
             allOf(Coll(
-                (OUTPUTS(0).tokens(0) == (_SingletonToken, 1L)), // state box
-                (OUTPUTS(1).tokens(0) == (_SingletonToken, 1L)), // sale lp box
-                (SELF.tokens(0)._1  == _SingletonToken)
+                (OUTPUTS(0).tokens(0) == (_singletonToken, 1L)), // state box
+                (OUTPUTS(1).value == _totalFees),
+                (OUTPUTS(1).tokens(0) == (_singletonToken, 1L)), // sale lp box
+                (SELF.tokens(0)._1  == _singletonToken)
             ))
 
         } else {
 
             allOf(Coll(
-                (OUTPUTS(0).tokens(0) == (_SingletonToken, 1L)),
-                (SELF.tokens(0)._1  == _SingletonToken)
+                (OUTPUTS(0).tokens(0) == (_singletonToken, 1L)),
+                (SELF.tokens(0)._1  == _singletonToken)
             ))
 
         } 
 
     }
 
-    sigmaProp(properOutput && properTokenTransfer) && _TxOperatorPK
+    sigmaProp(properOutput && properTokenTransfer) && _txOperatorPK
 
 }

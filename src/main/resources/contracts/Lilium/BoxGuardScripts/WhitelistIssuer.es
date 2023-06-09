@@ -6,8 +6,12 @@
     // Author: lucagdangelo@github.com
     // Auditor: mgpai22@github.com
 
+    // ===== Box Contents ===== //
+    // Registers
+    // R4: Long => WhitelistAmount
+
     // ===== Compile Time Constants ===== //
-    // _TxOperatorPK: SigmaProp
+    // _txOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
     // None
@@ -30,6 +34,6 @@
         validWhitelistIssuanceBox
     }
 
-    sigmaProp(validWhitelistMintTx) && _TxOperatorPK
+    sigmaProp(validWhitelistMintTx) && _txOperatorPK
 
 }

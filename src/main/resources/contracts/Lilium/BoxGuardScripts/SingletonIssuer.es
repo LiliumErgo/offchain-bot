@@ -7,18 +7,16 @@
     // Author: mgpai22@github.com
     // Auditor: lucagdangelo@github.com
 
-
     // ===== Compile Time Constants ===== //
     // _usePool: Boolean
-    // _singletonIssuanceContractBytes
-    // _TxOperatorPK: SigmaProp
+    // _txOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
-    // None
+    val singletonIssuanceContractBytes: Coll[Byte] = getVar[Coll[Byte]](0).get
 
-   val nftBox = if (usePool) (OUTPUTS(0).tokens(0) == (SELF.id, 2L)) else (OUTPUTS(0).tokens(0) == (SELF.id, 1L))
-   val properOutput = OUTPUTS(0).propositionBytes == _singletonIssuanceContractBytes
+   val nftBox = if (_usePool) (OUTPUTS(0).tokens(0) == (SELF.id, 2L)) else (OUTPUTS(0).tokens(0) == (SELF.id, 1L))
+   val properOutput = OUTPUTS(0).propositionBytes == singletonIssuanceContractBytes
 
-   sigmaProp(nftBox && properOutput) && _TxOperatorPK
+   sigmaProp(nftBox && properOutput) && _txOperatorPK
 
 }

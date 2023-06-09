@@ -6,8 +6,12 @@
     // Author: lucagdangelo@github.com
     // Auditor: mgpai22@github.com
 
+    // ===== Box Contents ===== //
+    // Registers
+    // R4: Long PreMintTokenAmount
+
     // ===== Compile Time Constants ===== //
-    // _TxOperatorPK: SigmaProp
+    // _txOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
     // None
@@ -30,6 +34,6 @@
         validPreMintIssuanceBox
     }
 
-    sigmaProp(validPreMintMintingTx) && _TxOperatorPK
+    sigmaProp(validPreMintMintingTx) && _txOperatorPK
 
 }
