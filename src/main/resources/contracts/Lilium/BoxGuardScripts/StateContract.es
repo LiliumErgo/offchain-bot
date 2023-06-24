@@ -16,7 +16,7 @@
    // R5: AvlTree => Issuer Box AVL
    // R6: Long => Index
    // R7: (Long, Long) => Sale Starting and Ending Timestamps
-   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted, paymentTokenAccepted, ergAccepted)
+   // R8: Coll[Boolean] => Coll(isReturn, whitelistAccepted, whitelistBypass, premintAccepted, paymentTokenAccepted, usePool, ergAccepted)
    // R9: Coll[Coll[Byte]]=> Coll(WhitelistTokenId, PreMintTokenId, PaymentTokenId)
 
    // ===== Compile Time Constants ===== //
@@ -36,7 +36,7 @@
    // _txOperatorFee: Long
 
    // ===== User-Defined Functions ===== //
-   // isValidSaleLP: (Boolean -> Boolean)
+   // isValidSaleLP: (Boolean => Boolean)
 
    // ===== Relevant Variables ===== //
    val hasSaleStarted: Boolean         = SELF.R7[(Long, Long)].get._1 <= CONTEXT.headers(0).timestamp
@@ -47,7 +47,7 @@
    val whitelistBypass: Boolean        = SELF.R8[Coll[Boolean]].get(2)
    val premintAccepted: Boolean        = SELF.R8[Coll[Boolean]].get(3)
    val paymentTokenAccepted: Boolean   = SELF.R8[Coll[Boolean]].get(4)
-   val ergAccepted: Boolean            = SELF.R8[Coll[Boolean]].get(5)
+   val ergAccepted: Boolean            = SELF.R8[Coll[Boolean]].get(6)
    val whitelistTokenId: Coll[Byte]    = SELF.R9[Coll[Coll[Byte]]].get(0)
    val premintTokenId: Coll[Byte]      = SELF.R9[Coll[Coll[Byte]]].get(1)
    val paymentTokenId: Coll[Byte]      = SELF.R9[Coll[Coll[Byte]]].get(2)
@@ -56,7 +56,7 @@
    // ===== User-Defined Functions ===== //
    def isValidSaleLP(buyerIsPayingFee: Boolean): Boolean = {
 
-      if (buyerIsPayingFee) {
+      if (buyerIsPayingFee || INPUTS(2).R5[Long].get == 1L) {
          true
       } else {
 
@@ -201,16 +201,16 @@
                if (hasSaleStarted) {
 
                   // We include the check that the buyer proxy contains the whitelist token inside the if-statement itself to take advantage of short-circuiting
-                  if (whitelistAccepted && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })) {
+                  if (whitelistAccepted && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t == (whitelistTokenId, 1L) })) {
 
-                     val buyerIsPayingFee: Boolean = (buyerProxyBox.value == _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
+                     val buyerIsPayingFee: Boolean = (buyerProxyBox.value >= _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
 
                      val validWhitelistSale: Boolean = {
 
                         // Note: Whitelisting does NOT bypass required Lilium Fee per mint
 
-                        val minerBox: Box = if (buyerIsPayingFee) OUTPUTS(4) else OUTPUTS(5)
-                        val txOperatorBox: Box = if (buyerIsPayingFee) OUTPUTS(5) else OUTPUTS(6)
+                        val minerBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(5) else OUTPUTS(4)
+                        val txOperatorBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(6) else OUTPUTS(5)
 
                         val validUserFee: Boolean = {
 
@@ -241,15 +241,12 @@
 
                      val validNormalSale: Boolean = {
 
-                        val buyerPaymentTokenFilter: Coll[(Coll[Byte], Long)] = buyerProxyBox.tokens.filter({ (t: (Coll[Byte], Long)) => t._1 == paymentTokenId })
-                        val buyerHasPaymentToken: Boolean = (buyerPaymentTokenFilter.size == 1)
+                        if (paymentTokenAccepted && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == paymentTokenId && t._2 >= _paymentTokenAmount })) {
 
-                        if (paymentTokenAccepted && buyerHasPaymentToken) {
+                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value >= _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
 
-                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value == _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
-
-                           val minerBox: Box = if (buyerIsPayingFee) OUTPUTS(4) else OUTPUTS(5)
-                           val txOperatorBox: Box = if (buyerIsPayingFee) OUTPUTS(5) else OUTPUTS(6)
+                           val minerBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(5) else OUTPUTS(4)
+                           val txOperatorBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(6) else OUTPUTS(5)
 
                            val validUserFee: Boolean = {
 
@@ -274,10 +271,10 @@
 
                         } else if (ergAccepted) {
 
-                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value == _minBoxValue + _minerFee + _priceOfNFT + liliumFee + _txOperatorFee + _minerFee)
+                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value >= _minBoxValue + _minerFee + _priceOfNFT + liliumFee + _txOperatorFee + _minerFee)
 
-                           val minerBox: Box = if (buyerIsPayingFee) OUTPUTS(4) else OUTPUTS(5)
-                           val txOperatorBox: Box = if (buyerIsPayingFee) OUTPUTS(5) else OUTPUTS(6)
+                           val minerBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(5) else OUTPUTS(4)
+                           val txOperatorBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(6) else OUTPUTS(5)
 
                            val validUserFee: Boolean = {
 
@@ -311,16 +308,16 @@
 
                } else if (premintAccepted || (whitelistBypass && whitelistAccepted)) {
 
-                  if (whitelistBypass && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == whitelistTokenId })) {
+                  if (whitelistBypass && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t == (whitelistTokenId, 1L) })) {
 
-                     val buyerIsPayingFee: Boolean = (buyerProxyBox.value == _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
+                     val buyerIsPayingFee: Boolean = (buyerProxyBox.value >= _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
 
                      val validWhitelistBypassSale: Boolean = {
 
                         // Note: Whitelisting does NOT bypass required Lilium Fee per mint
 
-                        val minerBox: Box = if (buyerIsPayingFee) OUTPUTS(4) else OUTPUTS(5)
-                        val txOperatorBox: Box = if (buyerIsPayingFee) OUTPUTS(5) else OUTPUTS(6)
+                        val minerBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(5) else OUTPUTS(4)
+                        val txOperatorBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(6) else OUTPUTS(5)
 
                         val validUserFee: Boolean = {
 
@@ -347,19 +344,16 @@
 
                      validWhitelistBypassSale
 
-                  } else if (premintAccepted && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == premintTokenId})) { // Buyer has the premint token
+                  } else if (premintAccepted && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) => t == (premintTokenId, 1L) })) { // Buyer has the premint token
 
                      val validPreMintSale: Boolean = {
 
-                        val buyerPaymentTokenFilter: Coll[(Coll[Byte], Long)] = buyerProxyBox.tokens.filter({ (t: (Coll[Byte], Long)) => t._1 == paymentTokenId })
-                        val buyerHasPaymentToken: Boolean = (buyerPaymentTokenFilter.size == 1)
+                        if (paymentTokenAccepted && buyerProxyBox.tokens.exists({ (t: (Coll[Byte], Long)) =>  t._1 == paymentTokenId && t._2 >= _paymentTokenAmount })) {
 
-                        if (paymentTokenAccepted && buyerHasPaymentToken) {
+                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value >= _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
 
-                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value == _minBoxValue + _minerFee + _minBoxValue + liliumFee + _txOperatorFee + _minerFee)
-
-                           val minerBox: Box = if (buyerIsPayingFee) OUTPUTS(4) else OUTPUTS(5)
-                           val txOperatorBox: Box = if (buyerIsPayingFee) OUTPUTS(5) else OUTPUTS(6)
+                           val minerBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(5) else OUTPUTS(4)
+                           val txOperatorBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(6) else OUTPUTS(5)
 
                            val validUserFee: Boolean = {
 
@@ -384,10 +378,10 @@
 
                         } else if (ergAccepted) {
 
-                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value == _minBoxValue + _minerFee + _priceOfNFT + liliumFee + _txOperatorFee + _minerFee)
+                           val buyerIsPayingFee: Boolean = (buyerProxyBox.value >= _minBoxValue + _minerFee + _priceOfNFT + liliumFee + _txOperatorFee + _minerFee)
 
-                           val minerBox: Box = if (buyerIsPayingFee) OUTPUTS(4) else OUTPUTS(5)
-                           val txOperatorBox: Box = if (buyerIsPayingFee) OUTPUTS(5) else OUTPUTS(6)
+                           val minerBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(5) else OUTPUTS(4)
+                           val txOperatorBox: Box = if (!buyerIsPayingFee && INPUTS(2).R5[Long].get > 1) OUTPUTS(6) else OUTPUTS(5)
 
                            val validUserFee: Boolean = {
 
@@ -467,9 +461,12 @@
 
                   if (isReturn) {
 
+                    val outputTokensSize = OUTPUTS.map{ (outBox: Box) => (outBox.tokens.map { (token: (Coll[Byte], Long)) => token._2 }).fold(0L, { (acc: Long, curr: Long) => acc + curr }) }.fold(0L, { (acc: Long, curr: Long) => acc + curr })
+
                      allOf(Coll(
                         (userBoxOUT.tokens(0) == SELF.tokens(1)),
-                        (userBoxOUT.tokens(0)._1 == _collectionToken)
+                        (userBoxOUT.tokens(0)._1 == _collectionToken),
+                        (outputTokensSize == SELF.tokens(1)._2)
                      ))
 
                   } else {
