@@ -10,14 +10,24 @@ case class ContractsConfig(
 )
 
 case class Config(
+    artistTransaction: String,
     stateContract: StateContract,
     issuerContract: IssuerContract,
     proxyContract: ProxyContract,
-    collectionToken: String
+    saleLPContract: SaleLPContract,
+    collectionToken: Token,
+    preMintToken: Token,
+    whitelistToken: Token,
+    paymentToken: Token
+)
+
+case class Token(
+    tokenID: String,
+    tokenAmount: Long
 )
 case class StateContract(
     contract: String,
-    singleton: String
+    singleton: Token
 )
 case class IssuerContract(
     contract: String
@@ -26,26 +36,55 @@ case class ProxyContract(
     contract: String
 )
 
+case class SaleLPContract(
+    contract: String,
+    singleton: Token
+)
+
 class conf(
+    artistTransaction: String,
     stateContract: String,
     singleton: String,
+    singletonAmount: Long,
     issuerContract: String,
     proxyContract: String,
-    collectionToken: String
+    saleLPContract: String,
+    saleLPSingleton: String,
+    saleLPSingletonAmount: Long,
+    collectionToken: String,
+    collectionTokenAmount: Long,
+    preMintToken: String,
+    premintTokenAmount: Long,
+    whitelistToken: String,
+    whitelistTokenAmount: Long,
+    paymentToken: String,
+    paymentTokenAmount: Long
 ) {
-  val stateContractInstance: StateContract =
-    StateContract(stateContract, singleton)
-  val issuerContractInstance: IssuerContract =
+  private val stateContractInstance: StateContract =
+    StateContract(stateContract, Token(singleton, singletonAmount))
+  private val issuerContractInstance: IssuerContract =
     IssuerContract(issuerContract)
-  val proxyContractInstance: ProxyContract = ProxyContract(proxyContract)
+  private val proxyContractInstance: ProxyContract = ProxyContract(
+    proxyContract
+  )
+  private val saleLPContractInstance: SaleLPContract =
+    SaleLPContract(
+      saleLPContract,
+      Token(saleLPSingleton, saleLPSingletonAmount)
+    )
 
   val conf: Config = Config(
+    artistTransaction,
     stateContractInstance,
     issuerContractInstance,
     proxyContractInstance,
-    collectionToken
+    saleLPContractInstance,
+    Token(collectionToken, collectionTokenAmount),
+    Token(preMintToken, premintTokenAmount),
+    Token(whitelistToken, whitelistTokenAmount),
+    Token(paymentToken, paymentTokenAmount)
   )
-  val newConfig: ContractsConfig = ContractsConfig(conf)
+  private val newConfig: ContractsConfig = ContractsConfig(conf)
   private val gson = new GsonBuilder().setPrettyPrinting().create()
 
   def write(filePath: String): Unit = {
@@ -59,6 +98,14 @@ class conf(
     gson.fromJson(jsonString, classOf[ContractsConfig])
   }
 
+  def read: ContractsConfig = {
+    gson.fromJson(this.gson.toJson(this.newConfig), classOf[ContractsConfig])
+  }
+
+  def print: String = {
+    this.gson.toJson(this.newConfig)
+  }
+
 }
 
 object conf {
@@ -67,6 +114,10 @@ object conf {
   def read(filePath: String): ContractsConfig = {
     val jsonString: String = Source.fromFile(filePath).mkString
     gson.fromJson(jsonString, classOf[ContractsConfig])
+  }
+
+  def toJsonString(json: ContractsConfig): String = {
+    this.gson.toJson(json)
   }
 
   def write(filePath: String, newConfig: ContractsConfig): Unit = {
@@ -84,6 +135,7 @@ case class ServiceOwnerConfig(
     txOperatorMnemonicPw: String,
     liliumFeeAddress: String,
     liliumFeePercent: Long,
+    extraFeaturePercent: Long,
     minTxOperatorFeeNanoErg: Long,
     minerFeeNanoErg: Long,
     minBoxValueNanoErg: Long,
