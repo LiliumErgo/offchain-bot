@@ -16,11 +16,11 @@
     // _txOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
-    val collectionIssuerBox: Box = getVar[Box](0).get
-    val stateBoxContractBytes: Coll[Byte] = getVar[Coll[Byte]](1).get
+    val StateBoxContractBytes: Coll[Byte] = getVar[Coll[Byte]](0).get
+    val CollectionIssuerBox: Box = getVar[Box](1).get
 
-    val properOutput = (OUTPUTS(0).propositionBytes == stateBoxContractBytes)
-    val properTokenTransfer = (OUTPUTS(0).tokens(1) == (collectionIssuerBox.id, collectionIssuerBox.R9[Long].get)) && (SELF.tokens(0)._1  == collectionIssuerBox.id)
+    val properOutput = (OUTPUTS(0).propositionBytes == StateBoxContractBytes)
+    val properTokenTransfer = (OUTPUTS(0).tokens(1) == (CollectionIssuerBox.id, CollectionIssuerBox.R9[Long].get)) && (SELF.tokens(0)._1  == CollectionIssuerBox.id)
 
     sigmaProp(properOutput && properTokenTransfer) && _txOperatorPK
 
