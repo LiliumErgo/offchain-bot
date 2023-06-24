@@ -74,10 +74,13 @@ class createCollection(
     premintAccepted: Boolean,
     whitelistTokenAmount: Long,
     premintTokenAmount: Long,
+    usePool: Boolean,
+    totalFees: Long,
     socialMediaMap: mutable.LinkedHashMap[String, String],
     issuanceMetaDataMap: PlasmaMap[IndexKey, IssuanceValueAVL],
     issuerMetaDataMap: PlasmaMap[IndexKey, IssuerValue],
     priceOfNFTNanoErg: Long,
+    paymentTokenAmount: Long,
     liliumFeeAddress: Address,
     liliumFeePercent: Long,
     minTxOperatorFeeNanoErg: Long,
@@ -163,7 +166,9 @@ class createCollection(
   private val singletonIssuerContract: ErgoContract =
     compiler.compileSingletonIssuerContract(
       singletonIssuerContractString,
-      txHelper.senderAddress //liliumTxOperator
+      txHelper.senderAddress, //liliumTxOperator
+      usePool,
+      minerFee
     )
 
   println(
@@ -297,7 +302,9 @@ class createCollection(
         initTransactionP1.getOutputsToSpend.get(0).getId.toString,
         1
       ),
-      txHelper.senderAddress
+      txHelper.senderAddress,
+      usePool,
+      totalFees
     )
 
   val proxyContract: ErgoContract =
@@ -318,6 +325,7 @@ class createCollection(
       1L
     ),
     priceOfNFTNanoErg,
+    paymentTokenAmount,
     liliumFeeAddress,
     liliumFeePercent,
     minTxOperatorFeeNanoErg,
@@ -398,6 +406,7 @@ class createCollection(
     ),
     preMintToken,
     whitelistToken,
+    whitelistToken,
     0.001 + convertERGLongToDouble(minerFee) + convertERGLongToDouble(
       minTxOperatorFeeNanoErg
     )
@@ -434,13 +443,13 @@ class createCollection(
   val stateBoxTx: String = txHelper.sendTx(firstStateBoxTx)
   println("State Box Tx: " + stateBoxTx)
 
-  new conf(
-    stateContract.toAddress.toString,
-    singletonTokenTx.getOutputsToSpend.get(0).getTokens.get(0).getId.toString,
-    issuerContract.toAddress.toString,
-    proxyContract.toAddress.toString,
-    initTransactionP1.getOutputsToSpend.get(1).getId.toString
-  ).write("contracts.json")
+//  new conf(
+//    stateContract.toAddress.toString,
+//    singletonTokenTx.getOutputsToSpend.get(0).getTokens.get(0).getId.toString,
+//    issuerContract.toAddress.toString,
+//    proxyContract.toAddress.toString,
+//    initTransactionP1.getOutputsToSpend.get(1).getId.toString
+//  ).write("contracts.json")
 
   DatabaseAPI.createArtistEntry(
     singletonTokenTx.getOutputsToSpend.get(0).getTokens.get(0).getId.toString,
