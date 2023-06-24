@@ -6,12 +6,29 @@ import configs.{collectionParser, serviceOwnerConf}
 import contracts.LiliumContracts
 import initilization.createCollection
 import mint.{Client, DefaultNodeInfo}
+import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.ErgoBox.{R4, R7, R9}
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import org.ergoplatform.appkit.{Address, ErgoContract, ErgoToken, ErgoValue}
+import org.ergoplatform.appkit.{
+  Address,
+  ErgoContract,
+  ErgoToken,
+  ErgoValue,
+  NetworkType
+}
+import org.ergoplatform.explorer.client.model.OutputInfo
+import sigmastate.Values.ErgoTree
 import special.collection.Coll
 import special.sigma.SigmaProp
-import utils.{BoxAPI, ContractCompile, MetadataTranscoder, TransactionHelper, explorerApi}
+import utils.{
+  BoxAPI,
+  ContractCompile,
+  MetadataTranscoder,
+  OutBoxes,
+  SpectrumAPI,
+  TransactionHelper,
+  explorerApi
+}
 
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
@@ -304,7 +321,11 @@ object stateBoxConstantsTest extends App {
     )
 
   private val txHelper =
-    new TransactionHelper(this.ctx, serviceConf.txOperatorMnemonic, serviceConf.txOperatorMnemonicPw)
+    new TransactionHelper(
+      this.ctx,
+      serviceConf.txOperatorMnemonic,
+      serviceConf.txOperatorMnemonicPw
+    )
 
   println(
     compiler
@@ -354,6 +375,7 @@ object stateBoxConstantsTest extends App {
   val minTxOperatorFeeNanoErg = serviceConf.minTxOperatorFeeNanoErg
   val minerFee = serviceConf.minerFeeNanoErg
   val minBoxValue = 9999999
+  val paymentTokenAmount = collectionFromJson.paymentTokenAmount
 
   val stateContract = compiler.compileStateContract(
     LiliumContracts.StateContract.contractScript,
@@ -364,6 +386,7 @@ object stateBoxConstantsTest extends App {
     collectionToken,
     singletonToken,
     priceOfNFTNanoErg,
+    paymentTokenAmount,
     liliumFeeAddress,
     liliumFeePercent,
     minTxOperatorFeeNanoErg,
