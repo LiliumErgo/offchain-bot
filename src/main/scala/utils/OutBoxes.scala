@@ -232,12 +232,14 @@ class OutBoxes(ctx: BlockchainContext) {
       r8BooleanArr: Array[Boolean],
       preMintToken: ErgoToken,
       whitelistToken: ErgoToken,
+      paymentToken: ErgoToken,
       amount: Double = 0.001
   ): OutBox = {
 
     val r9 = {
       var preMintTokenBytes: Array[Byte] = Array()
       var whiteListTokenBytes: Array[Byte] = Array()
+      var paymentTokenBytes: Array[Byte] = Array()
 
       if (preMintToken != null) {
         preMintTokenBytes = preMintToken.getId.getBytes
@@ -245,8 +247,17 @@ class OutBoxes(ctx: BlockchainContext) {
       if (whitelistToken != null) {
         whiteListTokenBytes = whitelistToken.getId.getBytes
       }
+      if (paymentToken != null) {
+        paymentTokenBytes = paymentToken.getId.getBytes
+      }
 
-      (Colls.fromArray(whiteListTokenBytes), Colls.fromArray(preMintTokenBytes))
+      Colls.fromArray(
+        Array(
+          Colls.fromArray(whiteListTokenBytes),
+          Colls.fromArray(preMintTokenBytes),
+          Colls.fromArray(paymentTokenBytes)
+        )
+      )
     }
 
     this.txBuilder
@@ -279,12 +290,14 @@ class OutBoxes(ctx: BlockchainContext) {
       r8BooleanArr: Array[Boolean],
       preMintToken: ErgoToken,
       whitelistToken: ErgoToken,
+      paymentToken: ErgoToken,
       amount: Double = 0.001
   ): OutBox = {
 
     val r9 = {
       var preMintTokenBytes: Array[Byte] = Array()
       var whiteListTokenBytes: Array[Byte] = Array()
+      var paymentTokenBytes: Array[Byte] = Array()
 
       if (preMintToken != null) {
         preMintTokenBytes = preMintToken.getId.getBytes
@@ -292,8 +305,17 @@ class OutBoxes(ctx: BlockchainContext) {
       if (whitelistToken != null) {
         whiteListTokenBytes = whitelistToken.getId.getBytes
       }
+      if (paymentToken != null) {
+        paymentTokenBytes = paymentToken.getId.getBytes
+      }
 
-      (Colls.fromArray(whiteListTokenBytes), Colls.fromArray(preMintTokenBytes))
+      Colls.fromArray(
+        Array(
+          Colls.fromArray(whiteListTokenBytes),
+          Colls.fromArray(preMintTokenBytes),
+          Colls.fromArray(paymentTokenBytes)
+        )
+      )
     }
 
     this.txBuilder
@@ -442,6 +464,24 @@ class OutBoxes(ctx: BlockchainContext) {
       .build()
   }
 
+  def artistTokensPayoutBox(
+      token: List[ErgoToken],
+      artistAddress: Address,
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .tokens(token: _*)
+      .contract(
+        new ErgoTreeContract(
+          artistAddress.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .build()
+  }
+
   def artistPayoutBox(
       artistAddress: Address,
       amount: Double
@@ -454,6 +494,25 @@ class OutBoxes(ctx: BlockchainContext) {
           artistAddress.getErgoAddress.script,
           this.ctx.getNetworkType
         )
+      )
+      .build()
+  }
+
+  def newLPBox(
+      LPContract: ErgoContract,
+      singleton: ErgoToken,
+      artistAddress: Address,
+      newAmountLP: Long,
+      amount: Double
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .tokens(singleton)
+      .contract(LPContract)
+      .registers(
+        ErgoValue.of(artistAddress.getPublicKey),
+        ErgoValue.of(newAmountLP)
       )
       .build()
   }
