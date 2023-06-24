@@ -9,22 +9,19 @@
     // ===== Box Contents ===== //
     // Tokens
     // 1. (StateSingletonTokenId, 1) // Not really a singleton since there will be two tokens in existence, but just keeping the same name.
-
+    // Registers
+    // R4: SigmaProp Artist Address
+    // R5: Long amount LP
     // ===== Compile Time Constants ===== //
-    // _priceOfNFT: Long
-    // _liliumFeeNum: Long
-    // _liliumFeeDenom: Long
-    // _txOperatorFee: Long
+    // _minBoxValue: Long
     // _minerFee: Long
-    // _artistSigmaProp: SigmaProp
-    // _txOperatorPK: SigmaProp
-    
+    // _txOperatorFee: Long
+
     // ===== Context Extension Variables ===== //
     // None
 
     // ===== Relevant Variables ===== //
     val stateSingletonTokenId: Coll[Byte] = SELF.tokens(0)._1
-    val liliumFee: Long = (_liliumFeeNum * _priceOfNFT) / _liliumFeeDenom
     val isSale: Boolean = (INPUTS.size > 1)
 
     if (isSale) {
@@ -38,11 +35,13 @@
             // outputs
             val nftIssuerOUT: Box       = OUTPUTS(0)
             val stateBoxOUT: Box        = OUTPUTS(1)
+            val amountLP: Long          = SELF.R5[Long].get
+            val isLastSale: Boolean     = (amountLP - 1L == 0L) // no more collection tokens remain
+
             val userFeeOUT: Box         = OUTPUTS(2)
             val liliumFeeOUT: Box       = OUTPUTS(3)
-            Val saleLPOUT: Box          = OUTPUTS(4)
-            val minerFeeOUT: Box        = OUTPUTS(5)
-            val txOperatorFeeOUT: Box   = OUTPUTS(6)
+            val minerFeeOUT: Box        = if (isLastSale) OUTPUTS(4) else OUTPUTS(5)
+            val txOperatorFeeOUT: Box   = if (isLastSale) OUTPUTS(5) else OUTPUTS(6)
 
             val validStateBox: Boolean = {
 
@@ -50,48 +49,40 @@
 
             }
 
-            val validLiliumFee: Boolean = {
-
-                (liliumFeeOUT.value == liliumFee)
-
-            }
-
-            val validTxOperatorFee: Boolean = {
-
-                (txOperatorFeeOUT.value == _txOperatorFee)
-
-            }
-
-            val validMinerFee: Boolean = {
-
-                (minerFeeOUT.value == _minerFee)
-
-            }
-
             val validSelfRecreation: Boolean = {
 
-                allOf(Coll(
-                    (saleLPOUT.value == SELF.value - liliumFee - _txOperatorFee - _minerFee),
-                    (saleLPOUT.propositionBytes == SELF.propositionBytes),
-                    (saleLPOUT.tokens == SELF.tokens)
-                ))
+                if (isLastSale) {
+                    true
+                } else {
 
+                    val saleLPOUT: Box = OUTPUTS(4)
+                    val minerFee = minerFeeOUT.value
+                    val liliumFee = liliumFeeOUT.value
+                    val fundsToSpend = _minBoxValue + minerFee + liliumFee + _txOperatorFee + minerFee
+
+                    allOf(Coll(
+                        (saleLPOUT.R5[Long].get == amountLP - 1L),
+                        (saleLPOUT.value == SELF.value - fundsToSpend),
+                        (saleLPOUT.propositionBytes == SELF.propositionBytes),
+                        (saleLPOUT.tokens == SELF.tokens)
+                    ))
+
+                }
             }
 
             allOf(Coll(
                 validStateBox,
-                validLiliumFee,
-                validTxOperatorFee,
-                validMinerFee,
                 validSelfRecreation
             ))
 
         }
 
-        sigmaProp(validSaleTx) && _txOperatorPK
+        sigmaProp(validSaleTx)
 
     } else {
-        
+
+        val artistSigmaProp: SigmaProp = SELF.R4[SigmaProp].get
+
         val validRefundTx: Boolean = {
 
             // outputs
@@ -102,14 +93,14 @@
 
                 allOf(Coll(
                     (userBox.value == SELF.value - _minerFee),
-                    (userBox.propositionBytes == _artistSigmaProp.propBytes)
+                    (userBox.propositionBytes == artistSigmaProp.propBytes)
                 ))
 
             }
 
             val validMinerFee: Boolean = (minerBox.value == _minerFee)
 
-            val validSingletonBurn: Boolean = (OUTPUTS.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 != stateSingletonTokenId }))
+            val validSingletonBurn: Boolean = OUTPUTS.forall({(output: Box) => (output.tokens.size == 0)})
 
             allOf(Coll(
                 validUserBox,
@@ -119,7 +110,7 @@
 
         }
 
-        sigmaProp(validRefundTx) && _artistSigmaProp
+        sigmaProp(validRefundTx) && artistSigmaProp
 
     }
 
