@@ -47,12 +47,18 @@ case class Collection(
     mintingExpiry: Long,
     collectionMaxSize: Long,
     priceOfNFTNanoErg: Long,
+    paymentTokenAmount: Long,
+    paymentTokenID: String,
     returnCollectionTokensToArtist: Boolean,
     whitelistAccepted: Boolean,
     whitelistBypass: Boolean,
     premintAccepted: Boolean,
+    paymentTokenAccepted: Boolean,
+    ergAccepted: Boolean,
     whitelistTokenAmount: Long,
-    premintTokenAmount: Long
+    premintTokenAmount: Long,
+    usePool: Boolean,
+    totalFees: Long
 )
 
 case class Royalty(address: String, amount: Double)
