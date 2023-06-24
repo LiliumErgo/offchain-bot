@@ -1,24 +1,19 @@
 package mint
 
-import AVL.IssuerBox.{IssuerHelpersAVL, IssuerValue}
-import AVL.NFT.{IndexKey, IssuanceAVLHelpers, IssuanceValueAVL}
-import com.google.common.primitives.Longs
-import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap, Proof}
-import org.bouncycastle.util.encoders.Hex
+import AVL.IssuerBox.IssuerValue
+import AVL.NFT.{IndexKey, IssuanceValueAVL}
+import io.getblok.getblok_plasma.collections.PlasmaMap
 import org.ergoplatform.ErgoBox.R9
-import org.ergoplatform.{ErgoBox, ErgoScriptPredef}
+import org.ergoplatform.ErgoScriptPredef
 import org.ergoplatform.appkit.{ErgoValue, _}
-import org.ergoplatform.appkit.impl.{Eip4TokenBuilder, ErgoTreeContract}
+import org.ergoplatform.appkit.impl.Eip4TokenBuilder
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
-import scalan.RType.LongType
 import scorex.crypto.encode.Base16
-import sigmastate.basics.DLogProtocol
 import sigmastate.eval.Colls
 import special.collection.Coll
 import utils.{MetadataTranscoder, OutBoxes, TransactionHelper, explorerApi}
 
 import java.nio.charset.StandardCharsets
-import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -26,7 +21,15 @@ import scala.collection.mutable.ListBuffer
 class mintUtility(
     val ctx: BlockchainContext,
     txOperatorMnemonic: String,
-    txOperatorMnemonicPw: String
+    txOperatorMnemonicPw: String,
+    minerFee: Long,
+    minerFeeAndMinBoxValueSum: Long,
+    liliumFee: Long,
+    txOperatorFee: Long,
+    paymentTokenAmount: Long,
+    priceOfNFTNanoErg: Long,
+    artistAddress: Address,
+    liliumFeeAddress: Address
 ) {
   private val txPropBytes =
     Base16.decode(ErgoScriptPredef.feeProposition(720).bytesHex).get
@@ -44,13 +47,15 @@ class mintUtility(
   private val encoder = new metadataTranscoder.Encoder
   private val decoder = new metadataTranscoder.Decoder
 
-  private val artistAddressConstant = 6
-  private val minerFeeConstant = 48
-  private val minerFeeAndMinBoxValueSumConstant = 26
-  private val collectionTokenConstant = 3
-  private val liliumFeeAddressConstant = 46
-  private val liliumFeeValueConstant = 45
-  private val priceOfNFTNanoErgConstant = 39
+  val artistAddressConstant = 7
+  val minerFeeConstant = 59
+  val collectionTokenConstant = 3
+  val liliumFeeAddressConstant = 148
+  val liliumFeeValueConstant = 147
+  val priceOfNFTNanoErgConstant = 82
+  val paymentTokenAmountConstant = 65
+  val txOperatorFeeConstant = 64
+  val minBoxValueConstant = 51
 
   def convertERGLongToDouble(num: Long): Double = {
     val value = num * math.pow(10, -9)
@@ -66,6 +71,10 @@ class mintUtility(
 
   def buildIssuerTx(
       boxWithCollectionTokens: InputBox, //use singleton from db to get box
+      LPBox: InputBox,
+      proxyValue: Long,
+      stateBoxBooleans: Array[Boolean],
+      tokenArray: Array[Array[Byte]],
       proxyInput: InputBox, // get from api
       issuerContract: ErgoContract, // constant
       encodedRoyalty: ErgoValue[ // create from db
@@ -96,19 +105,7 @@ class mintUtility(
         .getValue
         .asInstanceOf[(Long, Long)] // sale start and end time stamps
 
-    val r8 = input0.getRegisters
-      .get(4)
-      .getValue
-      .asInstanceOf[Coll[Boolean]]
-      .toArray
-
-    val r9 = input0.getRegisters
-      .get(5)
-      .getValue
-      .asInstanceOf[(Coll[Byte], Coll[Byte])]
-
-    val returnCollectionTokensToArtist =
-      r8.head // returnCollectionTokensToArtist
+    val returnCollectionTokensToArtist = stateBoxBooleans.head
 
     val stateContract = Address
       .fromPropositionBytes(
@@ -116,6 +113,23 @@ class mintUtility(
         input0.toErgoValue.getValue.propositionBytes.toArray
       )
       .toErgoContract
+
+    val LPContract: ErgoContract = {
+      if (LPBox != null) {
+
+        println("LP Box Value: " + LPBox.getValue)
+        Address
+          .fromPropositionBytes(
+            ctx.getNetworkType,
+            LPBox.toErgoValue.getValue.propositionBytes.toArray
+          )
+          .toErgoContract
+      } else {
+        null
+      }
+    }
+
+    val hasSaleStarted: Boolean = r7._1 < System.currentTimeMillis()
 
     val hasSaleEnded: Boolean = {
       if (r7._2 == -1L) {
@@ -125,33 +139,26 @@ class mintUtility(
       }
     }
 
-    val minerFee = stateContract.getErgoTree
-      .constants(minerFeeConstant)
-      .value
-      .asInstanceOf[Long]
-
-    val minerFeeAndMinBoxValueSum = stateContract.getErgoTree
-      .constants(minerFeeAndMinBoxValueSumConstant)
-      .value
-      .asInstanceOf[Long]
-
-//    val minerFeeAndMinBoxValueSum = 2600000
-//
-//    val minerFee = 1600000
-
-    val mockCollectionToken: ErgoToken =
-      new ErgoToken( // called mock since value is not accurate, we just want the token methods
-        stateContract.getErgoTree
-          .constants(collectionTokenConstant)
-          .value
-          .asInstanceOf[Coll[Byte]]
-          .toArray,
-        1
-      )
+    val mockCollectionToken =
+      try {
+        new ErgoToken( // called mock since value is not accurate, we just want the token methods
+          stateContract.getErgoTree
+            .constants(collectionTokenConstant)
+            .value
+            .asInstanceOf[Coll[Byte]]
+            .toArray,
+          1
+        )
+      } catch {
+        case _: Exception =>
+          throw new ErgoScriptConstantDecodeError(
+            "Error decoding collection token"
+          )
+      }
 
 //    val mockCollectionToken: ErgoToken =
 //      new ErgoToken( // called mock since value is not accurate, we just want the token methods
-//        "eceb119732b2b72c7f5dda0f6d70f4ce9b77766a1657b31ef59e51ecc6be7d0b",
+//        "16ad60a42cec3230e1d4c82ea0e6e56f29778452e48c0245888d8b88da068f06",
 //        1
 //      )
 
@@ -164,6 +171,49 @@ class mintUtility(
 //    println("Collection Max Size: " + collectionMaxSize)
 //
 //    println("State Box Contract: " + stateContract.toAddress.toString)
+
+    val whitelistToken = {
+      if (stateBoxBooleans(1)) {
+        new ErgoToken(tokenArray.head, 1)
+      } else {
+        null
+      }
+    }
+
+    val preMintToken = {
+      if (stateBoxBooleans(3)) {
+        new ErgoToken(tokenArray(1), 1)
+      } else {
+        null
+      }
+    }
+
+    val paymentToken = {
+      if (stateBoxBooleans(4)) {
+        new ErgoToken(tokenArray(2), paymentTokenAmount)
+      } else {
+        null
+      }
+    }
+
+    val stateBoxSingleton = input0.getTokens.get(0)
+
+    val (
+      whitelistAccepted,
+      whitelistBypass,
+      premintAccepted,
+      paymentTokenAccepted,
+      usePool,
+      ergAccepted
+    ) =
+      (
+        stateBoxBooleans(1),
+        stateBoxBooleans(2),
+        stateBoxBooleans(3),
+        stateBoxBooleans(4),
+        stateBoxBooleans(5),
+        stateBoxBooleans(6)
+      )
 
     inputs.append(
       input0.withContextVars(
@@ -181,6 +231,10 @@ class mintUtility(
       proxyInput
     )
 
+    if (LPBox != null) {
+      inputs.append(LPBox)
+    }
+
     for (input <- inputs) {
       inputValue.append(input.getValue)
     }
@@ -192,11 +246,9 @@ class mintUtility(
 //    inputValueIdeal.append((buyerAmountPaid * math.pow(10, 9).toLong).toLong)
 
     println(
-      "Processing Collection: " + boxWithCollectionTokens.getTokens
-        .get(0)
-        .getId
-        .toString + " " + (r6 + 1) + "/" + collectionMaxSize
+      "Processing Collection: " + stateBoxSingleton.getId.toString + " " + (r6 + 1) + "/" + collectionMaxSize
     )
+    println("Buyer Box ID: " + proxyInput.getId.toString)
 
 //    println("r6: " + r6)
 
@@ -254,16 +306,6 @@ class mintUtility(
         convertERGLongToDouble(minerFeeAndMinBoxValueSum)
       )
 
-    val artistAddress: Address = new org.ergoplatform.appkit.SigmaProp(
-      stateContract.getErgoTree
-        .constants(artistAddressConstant)
-        .value
-        .asInstanceOf[special.sigma.SigmaProp]
-    ).toAddress(ctx.getNetworkType)
-
-//    val artistAddress =
-//      Address.create("3WyK54Ma36PfbqC3J6xKqJgDxrF8fZ9Afn37a7BUfKACc9gF4t2p")
-
     val newStateBox: OutBox = {
       if (r6 + 1L == collectionMaxSize) { //last sale outbox
         println("Last Sale")
@@ -273,22 +315,22 @@ class mintUtility(
           stateContract,
           issuanceTree,
           issuerTree,
-          new ErgoToken(input0.getTokens.get(0).getId.toString, 1L),
+          stateBoxSingleton,
           r6 + 1L,
           convertERGLongToDouble(input0.getValue)
         )
       } else if (hasSaleEnded) { //sale expiry outbox
         println("Sale Has Expired")
+        if (LPBox != null) {
+          inputs.remove(2) //remove LP input
+        }
         inputs.remove(1) //remove proxy input
 
         if (returnCollectionTokensToArtist) {
           println("Collection Tokens are being returned to artist")
           outBoxObj.saleExpiryOutbox(
             artistAddress,
-            new ErgoToken(
-              input0.getTokens.get(1).getId.toString,
-              input0.getTokens.get(1).getValue
-            )
+            input0.getTokens.get(1)
           )
         } else {
           println("Tokens are being burned!")
@@ -298,22 +340,6 @@ class mintUtility(
         }
 
       } else {
-
-        val whitelistToken = {
-          if (r8(1)) {
-            new ErgoToken(r9._1.toArray, 1)
-          } else {
-            null
-          }
-        }
-
-        val preMintToken = {
-          if (r8(3)) {
-            new ErgoToken(r9._2.toArray, 1)
-          } else {
-            null
-          }
-        }
 
         outBoxObj.buildStateBox(
           stateContract,
@@ -327,20 +353,14 @@ class mintUtility(
           r6 + 1L,
           r7._1,
           r7._2,
-          r8,
+          stateBoxBooleans,
           preMintToken,
           whitelistToken,
+          paymentToken,
           convertERGLongToDouble(input0.getValue)
         )
       }
     }
-
-    val priceOfNFTNanoErg: Long = stateContract.getErgoTree
-      .constants(priceOfNFTNanoErgConstant)
-      .value
-      .asInstanceOf[Long]
-
-//    val priceOfNFTNanoErg: Long = 100000000
 
     val paymentBox: OutBox = {
 
@@ -348,76 +368,109 @@ class mintUtility(
           inputTokens: mutable.Buffer[ErgoToken],
           token: ErgoToken
       ): Boolean = {
-        inputTokens.count(t => t.getId.toString == token.getId.toString) > 0
+        if (token == null) {
+          false
+        } else {
+          inputTokens.count(t => t.getId.toString == token.getId.toString) > 0
+        }
       }
 
       val proxyTokens = proxyInput.getTokens.asScala
-
-      val whitelistToken = {
-        try {
-          new ErgoToken(r9._1.toArray, 1)
-        } catch {
-          case e: Exception => new ErgoToken("", 1)
-        }
-      }
-
-      val premintToken = {
-        try {
-          new ErgoToken(r9._2.toArray, 1)
-        } catch {
-          case e: Exception => new ErgoToken("", 1)
-        }
-      }
+      val premintPhase = !hasSaleStarted
 
       // Return respective payout boxes based on conditions
 
-      if (r8(1) && hasToken(proxyTokens, whitelistToken)) {
+      if (whitelistAccepted && hasToken(proxyTokens, whitelistToken)) {
         outBoxObj.artistTokenPayoutBox(
           whitelistToken,
           artistAddress
         )
-      } else if (r8(3) && hasToken(proxyTokens, premintToken)) {
+      } else if (
+        premintAccepted && hasToken(
+          proxyTokens,
+          preMintToken
+        ) && paymentTokenAccepted && hasToken(
+          proxyTokens,
+          paymentToken
+        ) && premintPhase
+      ) {
+        outBoxObj.artistTokensPayoutBox(
+          List(preMintToken, paymentToken),
+          artistAddress
+        )
+      } else if (
+        premintAccepted && hasToken(proxyTokens, preMintToken) && premintPhase
+      ) {
         outBoxObj.artistTokenPayoutBox(
-          premintToken,
+          preMintToken,
           artistAddress,
           convertERGLongToDouble(priceOfNFTNanoErg)
         )
-      } else {
-        outBoxObj.artistPayoutBox(
-          artistAddress,
-          convertERGLongToDouble(priceOfNFTNanoErg)
+      } else if (paymentTokenAccepted && hasToken(proxyTokens, paymentToken)) {
+        val tokenList = { // sends premint token to artist even if its after premint phase
+          if (hasToken(proxyTokens, preMintToken)) {
+            List(paymentToken, preMintToken)
+          } else {
+            List(paymentToken)
+          }
+        }
+        outBoxObj.artistTokensPayoutBox(
+          tokenList,
+          artistAddress
         )
+      } else { // assumes erg is accepted
+        if (hasToken(proxyTokens, preMintToken)) {
+          // sends premint token to artist even if its after premint phase
+          outBoxObj.artistTokenPayoutBox(
+            preMintToken,
+            artistAddress,
+            convertERGLongToDouble(priceOfNFTNanoErg)
+          )
+        } else {
+          outBoxObj.artistPayoutBox(
+            artistAddress,
+            convertERGLongToDouble(priceOfNFTNanoErg)
+          )
+        }
       }
     }
 
-    val liliumFee = stateContract.getErgoTree
-      .constants(liliumFeeValueConstant)
-      .value
-      .asInstanceOf[Long]
-
-//    val liliumFee = 5000000
-
 //    println("Lilium Fee: " + liliumFee)
-
-    val liliumFeeAddress = new org.ergoplatform.appkit.SigmaProp(
-      stateContract.getErgoTree
-        .constants(liliumFeeAddressConstant)
-        .value
-        .asInstanceOf[special.sigma.SigmaProp]
-    )
-      .toAddress(this.ctx.getNetworkType)
-
-//    val liliumFeeAddress =
-//      Address.create("3WxR2UxZihv7NTYkUj5U6Pzg1K3UTAip6oDCwDcn1AjDws49WDYg")
 
     val liliumBox: OutBox = outBoxObj.artistPayoutBox(
       liliumFeeAddress,
       convertERGLongToDouble(liliumFee)
     )
 
+    val newLPBox: OutBox = {
+      if (LPBox == null) {
+        null
+      } else {
+        println("Proxy Value: " + proxyValue)
+
+        if ((LPBox.getValue - proxyValue) == 0L) {
+          null
+        } else {
+          outBoxObj.newLPBox(
+            LPContract,
+            stateBoxSingleton,
+            artistAddress,
+            LPBox.getRegisters.get(1).getValue.asInstanceOf[Long] - 1,
+            convertERGLongToDouble(LPBox.getValue - proxyValue)
+          )
+        }
+      }
+    }
+
+    if (newLPBox != null) {
+      println("new LP Box Value (output): " + newLPBox.getValue)
+    }
+
     val OutBox: List[OutBox] = {
       if (hasSaleEnded) {
         List(newStateBox)
+      } else if (newLPBox != null) {
+        List(issuerOutBox, newStateBox, paymentBox, liliumBox, newLPBox)
       } else {
         List(issuerOutBox, newStateBox, paymentBox, liliumBox)
       }
@@ -437,10 +490,7 @@ class mintUtility(
             inputs.asJava,
             OutBox,
             List(
-              new ErgoToken(
-                input0.getTokens.get(0).getId.toString,
-                1L
-              )
+              input0.getTokens.get(0)
             ),
             convertERGLongToDouble(minerFee)
           )
@@ -449,14 +499,8 @@ class mintUtility(
             inputs.asJava,
             OutBox,
             List(
-              new ErgoToken(
-                input0.getTokens.get(1).getId.toString,
-                input0.getTokens.get(1).getValue
-              ),
-              new ErgoToken(
-                input0.getTokens.get(0).getId.toString,
-                1L
-              )
+              input0.getTokens.get(1),
+              input0.getTokens.get(0)
             ),
             convertERGLongToDouble(minerFee)
           )
@@ -469,7 +513,8 @@ class mintUtility(
         )
       }
     }
-    txHelper.signTransaction(unsignedTx)
+    val signedTransaction = txHelper.signTransaction(unsignedTx)
+    signedTransaction
   }
 
   def buildNFTBox(
@@ -514,13 +559,6 @@ class mintUtility(
         newStateBox.toErgoValue.getValue.propositionBytes.toArray
       )
       .toErgoContract
-
-    val minerFee = stateContract.getErgoTree
-      .constants(minerFeeConstant)
-      .value
-      .asInstanceOf[Long]
-
-//    val minerFee = 1600000
 
     val outputs = List(outBoxObj.nftOutBox(buyerAddress, nft))
 
