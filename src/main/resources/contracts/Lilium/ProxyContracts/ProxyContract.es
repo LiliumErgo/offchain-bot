@@ -60,7 +60,6 @@
             val validRefundBox: Boolean = {
 
                 allOf(Coll(
-                    (refundBoxOUT.value == SELF.value - _minerFee),
                     (refundBoxOUT.propositionBytes == buyerPK.propBytes),
                     (refundBoxOUT.tokens == SELF.tokens)
                 ))
