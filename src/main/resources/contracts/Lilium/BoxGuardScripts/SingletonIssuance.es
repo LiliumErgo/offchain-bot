@@ -20,17 +20,19 @@
 
     // ===== Context Extension Variables ===== //
     val singletonIssuanceContractBytes: Coll[Byte] = getVar[Coll[Byte]](0).get
-    val saleLPContractBytes: Coll[Byte] = getVar[Coll[Byte]](1).get
-   
     val properOutput: Boolean = OUTPUTS(0).propositionBytes == singletonIssuanceContractBytes
-    val properSaleLP: Boolean = if (usePool) OUTPUTS(1).propositionBytes == saleLPContractBytes
+
     val properTokenTransfer: Boolean = {
 
         if (_usePool) {
 
+            val saleLPContractBytes: Coll[Byte] = getVar[Coll[Byte]](1).get
+            val properSaleLP: Boolean = OUTPUTS(1).propositionBytes == saleLPContractBytes
+
             allOf(Coll(
                 (OUTPUTS(0).tokens(0) == (_singletonToken, 1L)), // state box
                 (OUTPUTS(1).value == _totalFees),
+                properSaleLP,
                 (OUTPUTS(1).tokens(0) == (_singletonToken, 1L)), // sale lp box
                 (SELF.tokens(0)._1  == _singletonToken)
             ))
@@ -42,7 +44,7 @@
                 (SELF.tokens(0)._1  == _singletonToken)
             ))
 
-        } 
+        }
 
     }
 
