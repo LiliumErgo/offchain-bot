@@ -651,7 +651,7 @@ class akkaFunctions {
       if (usePool && box.value >= priceOfNFTNanoErg) {
         priceOfNFTNanoErg
       } else if (
-        usePool && !hasPreMintToken && whitelistAccepted && hasWhitelistToken || (preMintTokenAccepted && hasPreMintToken && paymentTokenAccepted && hasPaymentToken) || usePool && paymentTokenAccepted && hasPaymentToken
+        usePool && !hasPreMintToken && whitelistAccepted && hasWhitelistToken || usePool && (preMintTokenAccepted && hasPreMintToken && paymentTokenAccepted && hasPaymentToken) || usePool && paymentTokenAccepted && hasPaymentToken
       ) {
         1000000L
       } else if (usePool && hasPreMintToken && preMintTokenAccepted) {
