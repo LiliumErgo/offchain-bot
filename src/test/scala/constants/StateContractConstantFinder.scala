@@ -10,7 +10,7 @@ import utils.{ContractCompile, MetadataTranscoder, explorerApi}
 import java.lang
 import scala.collection.mutable
 
-object ConstantFinder extends App {
+object StateContractConstantFinder extends App {
 
   val client: Client = new Client()
   client.setClient
