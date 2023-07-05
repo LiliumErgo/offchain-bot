@@ -507,3 +507,19 @@ object decodeExtraInfo extends App {
   val value = metadata.getValue.toArray(0)._2.map(_.toByte).toArray
   println(value.mkString("Array(", ", ", ")"))
 }
+
+object proxyContractTest extends App {
+  private val client: Client = new Client()
+  client.setClient
+  private val ctx = client.getContext
+
+  private val serviceFilePath = "serviceOwner.json"
+  private val serviceConf = serviceOwnerConf.read(serviceFilePath)
+
+  val compiler = new ContractCompile(ctx)
+  val proxy = compiler.compileProxyContract(
+    LiliumContracts.ProxyContract.contractScript,
+    serviceConf.minerFeeNanoErg
+  )
+  println(proxy.toAddress.toString)
+}
