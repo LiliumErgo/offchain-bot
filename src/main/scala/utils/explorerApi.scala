@@ -1,13 +1,20 @@
 package utils
 
-import configs.serviceOwnerConf
+import com.google.gson.Gson
+import configs.{SignedTransactionJson, serviceOwnerConf}
 import explorer.Explorer
+import org.apache.http.{HttpHeaders, NameValuePair}
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.{ContentType, StringEntity}
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.message.BasicNameValuePair
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.appkit.InputBox
 import org.ergoplatform.appkit.impl.{InputBoxImpl, ScalaBridge}
 import org.ergoplatform.explorer.client.model.{
   InputInfo,
   OutputInfo,
+  TokenInfo,
   TransactionInfo
 }
 import org.ergoplatform.explorer.client.{DefaultApi, ExplorerApiClient}
@@ -35,12 +42,12 @@ class explorerApi(
     new ApiClient(nodeUrl)
   }
 
-  def getUnspentBoxFromTokenID(tokenId: String): OutputInfo = {
+  def getUnspentBoxesFromTokenID(tokenId: String): util.List[OutputInfo] = {
     val api = this.getExplorerApi(this.apiUrl)
     val res =
-      api.getApiV1BoxesUnspentBytokenidP1(tokenId, 0, 1).execute().body()
+      api.getApiV1BoxesUnspentBytokenidP1(tokenId, 0, 100).execute().body()
     try {
-      res.getItems.get(0)
+      res.getItems
     } catch {
       case e: Exception => null
     }
@@ -61,6 +68,33 @@ class explorerApi(
   def getBoxesfromTransaction(txId: String): TransactionInfo = {
     val api = this.getExplorerApi(this.apiUrl)
     api.getApiV1TransactionsP1(txId).execute().body()
+  }
+
+  def sendTx(
+      tx: String
+  ): String = {
+    val requestEntity = new StringEntity(
+      tx,
+      ContentType.APPLICATION_JSON
+    )
+    val post = new HttpPost(
+      s"${this.nodeUrl}/transactions"
+    )
+
+    val nameValuePairs = new util.ArrayList[NameValuePair]()
+
+    nameValuePairs.add(new BasicNameValuePair("JSON", tx))
+    post.setEntity(requestEntity)
+    post.setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    val client = HttpClients.custom().build()
+    val response = client.execute(post)
+
+    response.toString
+  }
+
+  def getTokenInfo(tokenID: String): TokenInfo = {
+    val api = this.getExplorerApi(this.apiUrl)
+    api.getApiV1TokensP1(tokenID).execute().body()
   }
 
   def getAddressInfo(address: String): util.List[OutputInfo] = {

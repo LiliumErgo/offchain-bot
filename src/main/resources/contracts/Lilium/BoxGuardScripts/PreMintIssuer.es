@@ -6,8 +6,13 @@
     // Author: lucagdangelo@github.com
     // Auditor: mgpai22@github.com
 
+    // ===== Box Contents ===== //
+    // Registers
+    // R4: Long PreMintTokenAmount
+    // R5: SigmaProp User Address
+
     // ===== Compile Time Constants ===== //
-    // _TxOperatorPK: SigmaProp
+    // _txOperatorPK: SigmaProp
 
     // ===== Context Extension Variables ===== //
     // None
@@ -17,8 +22,9 @@
         val validPreMintIssuanceBox: Boolean = {
 
             val preMintTokenAmount = SELF.R4[Long].get
+            val userPk = SELF.R5[SigmaProp].get
             val validTokens: Boolean = (OUTPUTS(0).tokens(0) == (SELF.id, preMintTokenAmount))
-            val validUser: Boolean = (OUTPUTS(0).propositionBytes == INPUTS(0).propositionBytes)
+            val validUser: Boolean = (OUTPUTS(0).propositionBytes == userPk.propBytes)
 
             allOf(Coll(
                 validTokens,
@@ -30,6 +36,6 @@
         validPreMintIssuanceBox
     }
 
-    sigmaProp(validPreMintMintingTx) && _TxOperatorPK
+    sigmaProp(validPreMintMintingTx) && _txOperatorPK
 
 }

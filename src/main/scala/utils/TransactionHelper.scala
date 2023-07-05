@@ -249,7 +249,8 @@ class TransactionHelper(
       name: String,
       description: String,
       tokenAmount: Long,
-      tokenDecimals: Int
+      tokenDecimals: Int,
+      fee: Double = 0.001
   ): SignedTransaction = {
     var inBox: util.List[InputBox] = null;
     if (inputBox == null) {
@@ -286,10 +287,12 @@ class TransactionHelper(
         sender,
         amountList,
         List(outBox),
-        tokens = true
+        tokens = true,
+        fee
       )
     } else {
-      unsignedTransaction = this.buildUnsignedTransaction(inBox, List(outBox))
+      unsignedTransaction =
+        this.buildUnsignedTransaction(inBox, List(outBox), fee)
     }
 
     this.signTransaction(unsignedTransaction)

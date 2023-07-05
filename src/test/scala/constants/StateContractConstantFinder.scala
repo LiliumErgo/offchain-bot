@@ -10,7 +10,7 @@ import utils.{ContractCompile, MetadataTranscoder, explorerApi}
 import java.lang
 import scala.collection.mutable
 
-object ConstantFinder extends App {
+object StateContractConstantFinder extends App {
 
   val client: Client = new Client()
   client.setClient
@@ -55,7 +55,9 @@ object ConstantFinder extends App {
   val liliumFeeAddress = Address.create(serviceConf.liliumFeeAddress)
   val priceOfNFTNanoErg = collectionFromJson.priceOfNFTNanoErg
   val liliumFeePercent = serviceConf.liliumFeePercent
-  val minBoxValue = serviceConf.minBoxValueNanoErg
+  val minBoxValue = 423944325
+  val paymentTokenAmount = 34625
+  val minTxOperatorFeeNanoErg = 4239084
 
   val stateContract = compiler.compileStateContract(
     LiliumContracts.StateContract.contractScript,
@@ -66,17 +68,20 @@ object ConstantFinder extends App {
     collectionToken,
     singletonToken,
     priceOfNFTNanoErg,
+    paymentTokenAmount,
     liliumFeeAddress,
     liliumFeePercent,
-    serviceConf.minTxOperatorFeeNanoErg,
+    minTxOperatorFeeNanoErg,
     minerFeeNanoErg,
     minBoxValue
   )
 
   val potentialMinerFeeConstantList = mutable.ListBuffer[Int]()
-  val potentialMinBoxValueConstantList = mutable.ListBuffer[Int]()
   val potentialCollectionTokenConstantList = mutable.ListBuffer[Int]()
   val potentialPriceOfNFTConstantList = mutable.ListBuffer[Int]()
+  val potentialPaymentTokenAmountList = mutable.ListBuffer[Int]()
+  val potentialTXOperatorFeeList = mutable.ListBuffer[Int]()
+  val potentialMinBoxValueList = mutable.ListBuffer[Int]()
   val potentialLiliumFeeNumConstantList = mutable.ListBuffer[Int]()
   var artistAddressConstant = -1
   var liliumFeeAddressConstant = -1
@@ -86,10 +91,14 @@ object ConstantFinder extends App {
       case value: Long =>
         if (value == minerFeeNanoErg) {
           potentialMinerFeeConstantList += i
-        } else if (value == (minBoxValue + minerFeeNanoErg)) {
-          potentialMinBoxValueConstantList += i
         } else if (value == priceOfNFTNanoErg) {
           potentialPriceOfNFTConstantList += i
+        } else if (value == paymentTokenAmount) {
+          potentialPaymentTokenAmountList += i
+        } else if (value == minTxOperatorFeeNanoErg) {
+          potentialTXOperatorFeeList += i
+        } else if (value == minBoxValue) {
+          potentialMinBoxValueList += i
         } else if (
           liliumFeePercent == (value.toDouble / priceOfNFTNanoErg.toDouble) * 100
         ) {
@@ -123,17 +132,23 @@ object ConstantFinder extends App {
     )
   )
   println(
-    "Potential Min Box Value Constant: " + potentialMinBoxValueConstantList
-      .mkString(
-        ", "
-      )
-  )
-  println(
     "Potential Collection Token Constant: " + potentialCollectionTokenConstantList
       .mkString(", ")
   )
   println(
     "Potential Price of NFT Constant: " + potentialPriceOfNFTConstantList
+      .mkString(", ")
+  )
+  println(
+    "Potential Payment Amount Constant: " + potentialPaymentTokenAmountList
+      .mkString(", ")
+  )
+  println(
+    "Potential TX Operator Fee Constant: " + potentialTXOperatorFeeList
+      .mkString(", ")
+  )
+  println(
+    "Potential Min Box Value Constant: " + potentialMinBoxValueList
       .mkString(", ")
   )
   println(
