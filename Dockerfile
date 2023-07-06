@@ -26,6 +26,9 @@ RUN sbt assemblyPackageDependency
 # Copy the rest of the stuff (targets are ignored from .dockerignore)
 COPY --chown=java:java . ./
 
+# Set execute permissions for run.sh
+RUN chmod +x run.sh
+
 # Re-assemble
 RUN sbt assembly
 
@@ -33,5 +36,4 @@ RUN sbt assembly
 EXPOSE 9000
 
 # Run the app
-CMD ["chmod", "+x", "./run.sh"]
 CMD ["./run.sh"]
