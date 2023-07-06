@@ -29,7 +29,6 @@ target
 
 
 .vscode
-serviceOwner.json
 serviceOwner.json.example
 contracts.json
 collection.json
