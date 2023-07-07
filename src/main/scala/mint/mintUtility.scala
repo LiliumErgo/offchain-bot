@@ -506,11 +506,21 @@ class mintUtility(
           )
         }
       } else { //normal transaction
-        txHelper.buildUnsignedTransaction(
-          inputs.asJava,
-          OutBox,
-          convertERGLongToDouble(minerFee)
-        )
+        if (LPBox != null && newLPBox == null) {
+          // last LP Box, singleton must be burned
+          txHelper.buildUnsignedTransactionWithTokensToBurn(
+            inputs.asJava,
+            OutBox,
+            List(LPBox.getTokens.get(0)),
+            convertERGLongToDouble(minerFee)
+          )
+        } else {
+          txHelper.buildUnsignedTransaction(
+            inputs.asJava,
+            OutBox,
+            convertERGLongToDouble(minerFee)
+          )
+        }
       }
     }
     val signedTransaction = txHelper.signTransaction(unsignedTx)
