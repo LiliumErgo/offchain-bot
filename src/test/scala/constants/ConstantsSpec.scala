@@ -4,7 +4,13 @@ import configs.{Royalty, ServiceOwnerConfig, collectionParser, serviceOwnerConf}
 import contracts.LiliumContracts
 import main.stateBoxConstantsTest.{client, ctx, mockCollectionToken}
 import mint.Client
-import org.ergoplatform.appkit.{Address, ErgoContract, ErgoToken, ErgoValue}
+import org.ergoplatform.appkit.{
+  Address,
+  ErgoContract,
+  ErgoToken,
+  ErgoValue,
+  NetworkType
+}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import sigmastate.SType
@@ -115,7 +121,7 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
   val hashedRoyalty: Array[Byte] = decoder.hashRoyalty(encodedRoyalty.toHex)
 
   val priceOfNFTNanoErg: Long = 5000000
-  val liliumFeeAddress: Address = Address.create(serviceConf.liliumFeeAddress)
+  val liliumFeeAddress: Address = Address.create("3WxR2UxZihv7NTYkUj5U6Pzg1K3UTAip6oDCwDcn1AjDws49WDYg")
   val minBoxValue: Long = serviceConf.minBoxValueNanoErg
   val paymentTokenAmount = 3498349
 
@@ -177,7 +183,7 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
         .constants(artistAddressConstant)
         .value
         .asInstanceOf[special.sigma.SigmaProp]
-    ).toAddress(ctx.getNetworkType)
+    ).toAddress(NetworkType.TESTNET)
 
     artistAddress.toString should be(artistAddressDecoded.toString)
   }
@@ -226,7 +232,7 @@ class ConstantsSpec extends AnyFlatSpec with should.Matchers {
           .value
           .asInstanceOf[special.sigma.SigmaProp]
       )
-        .toAddress(this.ctx.getNetworkType)
+        .toAddress(NetworkType.TESTNET)
 
     liliumFeeAddress.toString should be(liliumFeeAddressDecoded.toString)
   }
