@@ -65,8 +65,8 @@ object ApiTest extends App {
   val collectionToken =
     "0800c8861fa269fb508167e70d1275683a8e23c23ac67e20f5558a52057719bf"
 
-//  val ergBox = exp.getErgoBoxfromIDNoApi(collectionToken)
-//  println(ergBox.additionalRegisters(R9).value.asInstanceOf[Long])
+  //  val ergBox = exp.getErgoBoxfromIDNoApi(collectionToken)
+  //  println(ergBox.additionalRegisters(R9).value.asInstanceOf[Long])
   /////////////
 
   val stateBox =
@@ -84,114 +84,114 @@ object ApiTest extends App {
   val contract =
     Address.fromPropositionBytes(ctx.getNetworkType, propBytes.toArray)
 
-//  println(
-//    contract.toErgoContract.getErgoTree
-//      .constants(18)
-//      .value
-//      .asInstanceOf[Coll[Byte]]
-//      .toArray
-//      .mkString("Array(", ", ", ")")
-//
+  //  println(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(18)
+  //      .value
+  //      .asInstanceOf[Coll[Byte]]
+  //      .toArray
+  //      .mkString("Array(", ", ", ")")
+  //
 
-//  println(
-//    "Lilium Fee: " +
-//      contract.toErgoContract.getErgoTree
-//        .constants(30)
-//        .value
-//        .asInstanceOf[Long]
-//  )
+  //  println(
+  //    "Lilium Fee: " +
+  //      contract.toErgoContract.getErgoTree
+  //        .constants(30)
+  //        .value
+  //        .asInstanceOf[Long]
+  //  )
 
-//  println(
-//    "Miner Fee: " +
-//      contract.toErgoContract.getErgoTree
-//        .constants(38)
-//        .value
-//        .asInstanceOf[Long]
-//  )
+  //  println(
+  //    "Miner Fee: " +
+  //      contract.toErgoContract.getErgoTree
+  //        .constants(38)
+  //        .value
+  //        .asInstanceOf[Long]
+  //  )
 
-//  contract.toErgoContract.getErgoTree.constants.foreach(o => println(o.value))
+  //  contract.toErgoContract.getErgoTree.constants.foreach(o => println(o.value))
 
-//  println(
-//    contract.toErgoContract.getErgoTree
-//      .constants(14)
-//      .value
-//      .asInstanceOf[Coll[Byte]]
-//      .toArray
-//      .mkString("Array(", ", ", ")")
-//  )
-//  println(
-//    "Issuer Contract Bytes: " + issuerContract.toAddress
-//      .asP2S()
-//      .scriptBytes
-//      .mkString("Array(", ", ", ")")
-//  )
+  //  println(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(14)
+  //      .value
+  //      .asInstanceOf[Coll[Byte]]
+  //      .toArray
+  //      .mkString("Array(", ", ", ")")
+  //  )
+  //  println(
+  //    "Issuer Contract Bytes: " + issuerContract.toAddress
+  //      .asP2S()
+  //      .scriptBytes
+  //      .mkString("Array(", ", ", ")")
+  //  )
 
-//  println(
-//    contract.toErgoContract.getErgoTree
-//      .constants(1)
-//      .value
-//      .asInstanceOf[Coll[Byte]]
-//      .toArray
-//      .mkString("Array(", ", ", ")")
-//  )
-//
-//  println(
-//    "Collection Token Bytes: " + new ErgoToken(
-//      collectionToken,
-//      1
-//    ).getId.getBytes.mkString("Array(", ", ", ")")
-//  )
+  //  println(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(1)
+  //      .value
+  //      .asInstanceOf[Coll[Byte]]
+  //      .toArray
+  //      .mkString("Array(", ", ", ")")
+  //  )
+  //
+  //  println(
+  //    "Collection Token Bytes: " + new ErgoToken(
+  //      collectionToken,
+  //      1
+  //    ).getId.getBytes.mkString("Array(", ", ", ")")
+  //  )
 
-//  println(
-//    contract.toErgoContract.getErgoTree
-//      .constants(29)
-//      .value
-//      .asInstanceOf[Long]
-//  )
+  //  println(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(29)
+  //      .value
+  //      .asInstanceOf[Long]
+  //  )
 
-//  println(
-//    contract.toErgoContract.getErgoTree
-//      .constants(1)
-//      .value
-//      .asInstanceOf[Coll[Byte]]
-//      .toArray
-//      .mkString("Array(", ", ", ")")
-//  )
+  //  println(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(1)
+  //      .value
+  //      .asInstanceOf[Coll[Byte]]
+  //      .toArray
+  //      .mkString("Array(", ", ", ")")
+  //  )
 
-//  val dummyArtistReconstruction = new org.ergoplatform.appkit.SigmaProp(
-//    contract.toErgoContract.getErgoTree
-//      .constants(5)
-//      .value
-//      .asInstanceOf[special.sigma.SigmaProp]
-//  )
-//    .toAddress(this.ctx.getNetworkType)
-//
-//  println(dummyArtistReconstruction)
-//
-//  println("Dummy Artist Bytes: " + dummyArist.getPublicKey)
+  //  val dummyArtistReconstruction = new org.ergoplatform.appkit.SigmaProp(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(5)
+  //      .value
+  //      .asInstanceOf[special.sigma.SigmaProp]
+  //  )
+  //    .toAddress(this.ctx.getNetworkType)
+  //
+  //  println(dummyArtistReconstruction)
+  //
+  //  println("Dummy Artist Bytes: " + dummyArist.getPublicKey)
 
-//  contract.toErgoContract.getErgoTree.constants.foreach(o => println(o.value))
+  //  contract.toErgoContract.getErgoTree.constants.foreach(o => println(o.value))
 
-//  private val royaltyMap: mutable.Map[Address, Int] = mutable.Map()
-//
-//  collectionFromJson.royalty.asScala.foreach { case (key, value: Double) =>
-//    royaltyMap += (Address.create(key) -> value.round.toInt)
-//  }
-//
-//  private val encodedRoyalty =
-//    encoder.encodeRoyalty(royaltyMap)
-//  private val hashedRoyalty = decoder.hashRoyalty(encodedRoyalty.toHex)
-//  println(hashedRoyalty.mkString("Array(", ", ", ")"))
+  //  private val royaltyMap: mutable.Map[Address, Int] = mutable.Map()
+  //
+  //  collectionFromJson.royalty.asScala.foreach { case (key, value: Double) =>
+  //    royaltyMap += (Address.create(key) -> value.round.toInt)
+  //  }
+  //
+  //  private val encodedRoyalty =
+  //    encoder.encodeRoyalty(royaltyMap)
+  //  private val hashedRoyalty = decoder.hashRoyalty(encodedRoyalty.toHex)
+  //  println(hashedRoyalty.mkString("Array(", ", ", ")"))
 
-//  val liliumFeeReconstruction = new org.ergoplatform.appkit.SigmaProp(
-//    contract.toErgoContract.getErgoTree
-//      .constants(31)
-//      .value
-//      .asInstanceOf[special.sigma.SigmaProp]
-//  )
-//    .toAddress(this.ctx.getNetworkType)
-//
-//  println(liliumFeeReconstruction)
+  //  val liliumFeeReconstruction = new org.ergoplatform.appkit.SigmaProp(
+  //    contract.toErgoContract.getErgoTree
+  //      .constants(31)
+  //      .value
+  //      .asInstanceOf[special.sigma.SigmaProp]
+  //  )
+  //    .toAddress(this.ctx.getNetworkType)
+  //
+  //  println(liliumFeeReconstruction)
 
 }
 
@@ -394,11 +394,11 @@ object stateBoxConstantsTest extends App {
     minBoxValue
   )
 
-//  val stateContract = Address
-//    .create(
-//      "Em9qtag6q7y1StjtSLV9zomLau5phVM4r2cCJXUoyYFSdL5sHAyjMW1Y25gWGNfq2JU3Gg9vNmvD4CMFczM1nMJpmV5s9oin99vTHpRF97b1BWU8nBieH2Gbj76w4yh7TiMtAx1KcfwPrcw8QdnTNTdos71fJTmZzxgoLeYctPPYCKXrgRiPk8K76nAK9EbXRrsfuJHaEtYqNVSSyGXJh2wywUcFw4RqYUCW5zuJ57P9qKSVSmoSCRni5qp8cRzrh4hHsbJ8DSWoWJtDvtcFmziYFaD5RkLrWZCQtSimSpEtUqLbTNtKTcL49dM6pec98PkJb4aHBSmbaJ4ytkaAKuTQbt1oXMMZK1vgZ7XUgGD2ZtqycKTpNG8a3izp4iWpqndjd3JmUf1X9EiwR2iJDxvirKRrjhaH5JrofcUD4Ry7rRsGZxdKhvYjk83jmRF8iFqwfsgHuv6A9RGLTYaQm3WrXtPv3EPK39be5AtpN9sMsrqwXGDB2J5hrGJqpJXhnxpyg9C6vC1pwtDCikyTiyueZi5SzoTJLmMp6ZSZBw9unttJdBMNePDNk6AeymFn7VdEteGPBZMeL5A9amo4cWNMFpkDLCEyYfrSMumqUQQ8wTRH7rZwvx7rZKw4P7vsoLgEwjYYkUKWKhdXejvfvyAhigDmJiJ3byJtiBAn5gRuWMcJxLXWxfkudnNQSPEkEB1MKNtrv2poeLuJP7jE4SN4dke3FKYXRYppRUQxuQkDREvhCU5Dbiqkm6SvUrhgMXEMgE3BmVdhpyMYxqrn3HhjpaYmEVVxegAdrpjYVsrYq8bYE3EtHUXpZBuGtv7tXrsVypTRL9e4a7ZaPXszMjbGD3DG4kamg1pVqN9weoPxtir1HTaciL5WrLnMy4WEBRbRKN7Mg3mLYuDmLgp1p33PgGa2vzKoTXgufv8AxCwfjv9C2ZJ9NbuzudyREZymTbBN2aBWsNvtXNPd11nSyjvtVePEKMRzW4cNAkc4fdDTT7KHb45x3QnNwVoutU4M1pwwBrHtvr8Go32dDwiwyzB8jWcd7DMxe54xNE9NnXLxqN9VkHZJ4fPb9avcpG5jBMmcS8R4gnyh9vUsXyHF1SYhfWkwZ1E9Y4vcaJRtkcMzjGGWyZvGJLdLWjeNSb569igPpdxdwnj58P4gHSBr3pScdR2dRbgR4NjgujHHi1BmjeZiKRbx4iA9EQcxtdByDgCWiMdwqgKysJcTCXpZXoyp3zPPocHedZbbWZ1oCDcion2gbwVohG8NS1aqpurj82aiMhXkyHgnVn5uwcnGBtQWv8ag7oJXVXEw18WvEWSKp7uquZtivtR1wbg3N1c8yGSs6gxZpnkhmbNQgM8dnrcwNnrj8FcDhXGBUtbZCvWAwBCsZ78JRaBJus8HqKjvnovoxfSfeVtFARrWNqUuQwVGJnRMhjTtfZf5B396CBgVMzQBRprdHb9WUGmEW6nEU1Le8V3VhCQjjdyPSsKhJJni7Qa1ViiC3TBED5p31ee8q6q6LQN4BPhiPY34V9uF4dMjw9VSQahVRGRBMboKEvKCcyCNDbdFT3LdqmVff9atLwvXHezH1GRb4cTaNJ2aE49ewHUfy79wNRqS7FDZxinqWDVQoortKYFBcfaR6su9dT2KaTmztqi7nso9XacYNo4mMTjK5oDKA9DLeWeQczmgJAYWRETNCSHpHi39vGnpVrP18ErfSs2ovjFQUBYF1a9AHd8vLbB4QabpG8ZguE42RVnXTBTbtmimynJmga9tkc3EHepx1n7QSKVZjqq8hUgwbXLJxTJKmkZkhUvdeLv8RisRK6iTFDQWaBoCsg9dfNNuu1LyabRjZDucwpVsz8aic2DXhESbyQxsYNRoCaVb5MnQf9JBDDTr3a1m2X1heodNnooMJbHWAH9nYRwpJBaqV2dzw8M2hcYKKCWHBfwCVLE9saQJ828XUjAxTGnWwyRJiA9Rk7CPFbGAh1uoUyQk1XhwXxY4eg1gWN8vcc5PkaxXCxxRtx97xyKsfWQ8gq8nMA745Cu15kGPkKFdY9HEbzEcH4zoot4YxUhrhvNsxXSgWk7KVMcPK2QdTghwSVBH"
-//    )
-//    .toErgoContract
+  //  val stateContract = Address
+  //    .create(
+  //      "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"
+  //    )
+  //    .toErgoContract
 
   println(stateContract.toAddress.toString)
   var i = 0
@@ -428,10 +428,10 @@ object stateBoxConstantsTest extends App {
       .asInstanceOf[special.sigma.SigmaProp]
   ).toAddress(ctx.getNetworkType)
 
-//  val liliumFeeDecoded = stateContract.getErgoTree
-//    .constants(31)
-//    .value
-//    .asInstanceOf[Long]
+  //  val liliumFeeDecoded = stateContract.getErgoTree
+  //    .constants(31)
+  //    .value
+  //    .asInstanceOf[Long]
 
   val liliumFeeAddressDecoded = new org.ergoplatform.appkit.SigmaProp(
     stateContract.getErgoTree
@@ -466,7 +466,7 @@ object stateBoxConstantsTest extends App {
     s"Lilium Fee Address: ${liliumFeeAddress.toString}, Decoded: ${liliumFeeAddressDecoded.toString}"
   )
 
-//  stateContract.getErgoTree.constants.foreach(o => println(o.value))
+  //  stateContract.getErgoTree.constants.foreach(o => println(o.value))
 
 }
 

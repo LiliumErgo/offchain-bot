@@ -13,7 +13,9 @@ import scala.collection.mutable.ListBuffer
 class OutBoxes(ctx: BlockchainContext) {
 
   private def getAmount(amount: Double): Long = {
-    (amount * Parameters.OneErg).toLong
+    val bigAmount = BigDecimal(amount)
+    val result = (bigAmount * BigDecimal(Parameters.OneErg)).setScale(0, BigDecimal.RoundingMode.HALF_UP)
+    result.toLong
   }
   private val txBuilder = this.ctx.newTxBuilder()
   private val minAmount = this.getAmount(0.001)

@@ -36,6 +36,7 @@ project/metals.sbt
 
 
 serviceOwner.json
+serviceOwner.json.testnet
 contracts.json
 collection.json
 metadata.json
