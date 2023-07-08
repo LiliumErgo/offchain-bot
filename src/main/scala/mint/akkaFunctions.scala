@@ -568,10 +568,14 @@ class akkaFunctions {
         )
           .toAddress(this.ctx.getNetworkType)
       } catch {
-        case _: Exception =>
+        case _: Exception => if (singletonId == "f0a491ad4c030dbf7a0caf682b18c054c6306644a547a86878e4acb910f321c6") {
+          // hardcoded since constants cause an issue if liliumFeeAddress == artistAddress
+          Address.create("9gWkqeBUdJxgPv9TYUM6mLY1RYkXHmJuHRhHnnM2UZ9qFqySotz")
+        } else {
           throw new ErgoScriptConstantDecodeError(
             "Error decoding lilium fee address"
           )
+        }
       }
     }
 
